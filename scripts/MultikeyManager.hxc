@@ -1,25 +1,38 @@
+import funkin.PlayerSettings;
 import funkin.modding.module.ScriptedModule;
 import funkin.modding.events.ScriptEvent;
 import funkin.play.notes.Strumline;
 import funkin.play.PlayState;
-import funkin.play.notes.StrumlineNote;
 import funkin.input.PreciseInputManager;
 import funkin.play.notes.NoteSprite;
-import funkin.play.notes.SustainTrail;
 import funkin.input.Controls;
 import funkin.input.Control;
-import funkin.PlayerSettings;
+
 import flixel.input.FlxInput;
 
 class MultikeyManager extends ScriptedModule {
-    var DIRECTIONS:Array<Int> = [0, 1, 2, 3, 4, 5, 6];
-    var KEY_BINDS:Array<Int> = [83, 68, 70, 32, 74, 75, 76];
-    var keyPressed:Array<Bool> = [false, false, false, false, false, false, false];
+    var NOTE_GAPS = [112, 112, 112, 112, 112, 105, 85, 80, 70, 65];
+    var NOTE_SCALES = [1, 1, 1, 1, 1, 0.95, 0.9, 0.85, 0.8, 0.75];
+    var NOTE_DIRECTIONS:Array<Array<Int>> = [
+        [2],
+        [0, 3],
+        [0, 2, 3],
+        [0, 1, 2, 3],
+        [0, 1, 2, 2, 3],
+        [0, 2, 3, 0, 1, 3],
+        [0, 2, 3, 2, 0, 1, 3],
+        [0, 1, 2, 3, 0, 1, 2, 3],
+        [0, 1, 2, 3, 2, 0, 1, 2, 3],
+    ];
+
+    var DIRECTIONS:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
 
     var state:PlayState;
     var playerStrumline:Strumline;
     var inputPressQueue:Array<PreciseInputEvent> = [];
     var inputReleaseQueue:Array<PreciseInputEvent> = [];
+    var justPressedActions = [];
+    var justReleasedActions = [];
 
     function new() {
         super("MultikeyManager", 1001);
@@ -30,7 +43,10 @@ class MultikeyManager extends ScriptedModule {
         state = PlayState.instance;
         playerStrumline = state.playerStrumline;
 
-        if (Strumline.KEY_COUNT > 4) {
+        if (Strumline.KEY_COUNT != 4) {
+            justPressedActions = [];
+            justReleasedActions = [];
+
             var totalKeys = Strumline.KEY_COUNT;
             var notesArray = playerStrumline.strumlineNotes.members;
             var baseSpacing = 0;
@@ -42,34 +58,127 @@ class MultikeyManager extends ScriptedModule {
                 if (i < notesArray.length) {
                     var note = notesArray[i];
                     var prevNote = notesArray[i - 1];
-                    note.direction = DIRECTIONS[i % DIRECTIONS.length];
+                    note.direction = DIRECTIONS[i % NOTE_DIRECTIONS.length];
                     note.x = prevNote.x + baseSpacing;
-
                     trace("[MK] Processed extra note: Direction = " + note.direction + ", Index = " + i);
                 }
             }
-
             initPreciseInputs();
         }
     }
 
-
     override function onUpdate(event:UpdateScriptEvent) {
         // Handle keybinds.
+        if (state == null) return;
         processInputQueue();
     }
 
-    function initPreciseInputs():Void {
-        PreciseInputManager.instance.onInputPressed.remove(state.onKeyPress);
-        PreciseInputManager.instance.onInputReleased.remove(state.onKeyRelease);
-        PreciseInputManager.instance.onInputPressed.add(onKeyPress);
-        PreciseInputManager.instance.onInputReleased.add(onKeyRelease);
-        initializeCustomKeyMapping();
+    override function onSongRetry(event:SongRetryEvent) {
+        state = null;
+        playerStrumline = null;
+        inputPressQueue = [];
+        inputReleaseQueue = [];
     }
 
-    function initializeCustomKeyMapping():Void {
-        // Clear existing key mappings
+    override function onDestroy(event:ScriptEvent) {
+        state = null;
+        playerStrumline = null;
+    }
+
+    function mapToBaseDirection(extendedDirection:Int):Int {
+        return extendedDirection % 4;
+    }
+
+    function processInputQueue() {
+        if (inputPressQueue.length + inputReleaseQueue.length == 0) return;
+
+        // Ignore inputs during cutscenes.
+        if (state.isInCutscene || state.disableKeys) {
+            inputPressQueue = [];
+            inputReleaseQueue = [];
+            return;
+        }
+
+        var notesInRange:Array<NoteSprite> = playerStrumline.getNotesMayHit();
+
+        var notesByDirection:Array<Array<NoteSprite>> = [];
+        for (i in 0...Strumline.KEY_COUNT) notesByDirection.push([]);
+
+        for (note in notesInRange) notesByDirection[note.direction].push(note);
+        while (inputPressQueue.length > 0) {
+            var input:PreciseInputEvent = inputPressQueue.shift();
+            var baseDirection = mapToBaseDirection(input.noteDirection);
+            playerStrumline.pressKey(baseDirection);
+
+            // Don't credit or penalize inputs in Bot Play.
+            if (state.isBotPlayMode) continue;
+
+            var notesInDirection:Array<NoteSprite> = notesByDirection[baseDirection];
+
+            #if FEATURE_GHOST_TAPPING
+            if ((!playerStrumline.mayGhostTap()) && notesInDirection.length == 0)
+                #else
+            if (notesInDirection.length == 0) #end {
+                // Pressed a wrong key with no notes nearby.
+                // Perform a ghost miss (anti-spam).
+                state.ghostNoteMiss(baseDirection, notesInRange.length > 0);
+
+                // Play the strumline animation.
+                playerStrumline.playPress(baseDirection);
+                trace('PENALTY Score: ${state.songScore}');
+            } else if (notesInDirection.length == 0) {
+                // Press a key with no penalty.
+
+                // Play the strumline animation.
+                playerStrumline.playPress(baseDirection);
+                trace('NO PENALTY Score: ${state.songScore}');
+            } else {
+                // Choose the first note, deprioritizing low priority notes.
+                var targetNote:Null<NoteSprite> = notesInDirection.find((note) -> !note.lowPriority);
+                if (targetNote == null) targetNote = notesInDirection[0];
+                if (targetNote == null) continue;
+
+                // Judge and hit the note.
+                state.goodNoteHit(targetNote, input);
+
+                notesInDirection.remove(targetNote);
+
+                // Play the strumline animation.
+                playerStrumline.playConfirm(baseDirection);
+            }
+        }
+
+        while (inputReleaseQueue.length > 0) {
+            var input:PreciseInputEvent = inputReleaseQueue.shift();
+            var baseDirection = mapToBaseDirection(input.noteDirection);
+
+            // Play the strumline animation.
+            playerStrumline.playStatic(baseDirection);
+            playerStrumline.releaseKey(baseDirection);
+        }
+    }
+
+    // Inputs
+    function initPreciseInputs() {
         var inputManager = PreciseInputManager.instance;
+
+        inputManager.onInputPressed.removeAll();
+        inputManager.onInputReleased.removeAll();
+        inputManager.onInputPressed.add(onKeyPress);
+        inputManager.onInputReleased.add(onKeyRelease);
+
+        initializeCustomKeyMapping(inputManager);
+    }
+
+    function onKeyPress(event:PreciseInputEvent) {
+        if (state != null && state.isGamePaused) inputPressQueue.push(event);
+    }
+
+    function onKeyRelease(event:PreciseInputEvent) {
+        if (state != null && state.isGamePaused) inputReleaseQueue.push(event);
+    }
+
+    function initializeCustomKeyMapping(inputManager) {
         var controls = PlayerSettings.player1.controls;
         controls.bindKeys(Control.NOTE_LEFT, controls.getDefaultKeybinds(controls.keyboardScheme, Control.NOTE_LEFT));
         controls.bindKeys(Control.NOTE_DOWN, controls.getDefaultKeybinds(controls.keyboardScheme, Control.NOTE_DOWN));
@@ -82,9 +191,8 @@ class MultikeyManager extends ScriptedModule {
         initializeKeys(inputManager, controls);
     }
 
-    function initializeKeys(inputManager:PreciseInputManager, controls:Controls):Void {
+    function initializeKeys(inputManager:PreciseInputManager, controls:Controls) {
         inputManager.clearKeys();
-
         for (noteDirection in DIRECTIONS) {
             var keys = getKeysForDirection(controls, noteDirection);
             for (key in keys) {
@@ -106,89 +214,9 @@ class MultikeyManager extends ScriptedModule {
             case 4: controls.getKeysForAction("debug_menu");
             case 5: controls.getKeysForAction("note_up");
             case 6: controls.getKeysForAction("freeplay_left");
+            case 7: controls.getKeysForAction("freeplay_left");
+            case 8: controls.getKeysForAction("freeplay_left");
+            case 9: controls.getKeysForAction("freeplay_left");
         };
-    }
-
-    function onKeyPress(event:PreciseInputEvent):Void {
-        if (state.isGamePaused) return;
-        // Do the minimal possible work here.
-        inputPressQueue.push(event);
-    }
-
-    function onKeyRelease(event:PreciseInputEvent):Void {
-        if (state.isGamePaused) return;
-        // Do the minimal possible work here.
-        inputReleaseQueue.push(event);
-    }
-
-    function processInputQueue():Void {
-        if (inputPressQueue.length + inputReleaseQueue.length == 0) return;
-
-        // Ignore inputs during cutscenes.
-        if (state.isInCutscene || state.disableKeys) {
-            inputPressQueue = [];
-            inputReleaseQueue = [];
-            return;
-        }
-
-        var notesInRange:Array<NoteSprite> = playerStrumline.getNotesMayHit();
-
-        var notesByDirection:Array<Array<NoteSprite>> = [];
-        for (i in 0...DIRECTIONS.length)
-            notesByDirection.push([]);
-
-        for (note in notesInRange)
-            notesByDirection[note.direction].push(note);
-
-        while (inputPressQueue.length > 0) {
-            var input:PreciseInputEvent = inputPressQueue.shift();
-            playerStrumline.pressKey(input.noteDirection);
-
-            // Don't credit or penalize inputs in Bot Play.
-            if (state.isBotPlayMode) continue;
-
-            var notesInDirection:Array<NoteSprite> = notesByDirection[input.noteDirection];
-
-            #if FEATURE_GHOST_TAPPING
-            if ((!playerStrumline.mayGhostTap()) && notesInDirection.length == 0)
-            #else
-            if (notesInDirection.length == 0)
-                #end {
-                // Pressed a wrong key with no notes nearby.
-                // Perform a ghost miss (anti-spam).
-                state.ghostNoteMiss(input.noteDirection, notesInRange.length > 0);
-
-                // Play the strumline animation.
-                playerStrumline.playPress(input.noteDirection);
-                trace('PENALTY Score: ${state.songScore}');
-            } else if (notesInDirection.length == 0) {
-                // Press a key with no penalty.
-
-                // Play the strumline animation.
-                playerStrumline.getByIndex(input.noteDirection);
-                trace('NO PENALTY Score: ${state.songScore}');
-            } else {
-                // Choose the first note, deprioritizing low priority notes.
-                var targetNote:Null<NoteSprite> = notesInDirection.find((note) -> !note.lowPriority);
-                if (targetNote == null) targetNote = notesInDirection[0];
-                if (targetNote == null) continue;
-
-                // Judge and hit the note.
-                state.goodNoteHit(targetNote, input);
-
-                notesInDirection.remove(targetNote);
-
-                // Play the strumline animation.
-                playerStrumline.playConfirm(input.noteDirection);
-            }
-        }
-
-        while (inputReleaseQueue.length > 0) {
-            var input:PreciseInputEvent = inputReleaseQueue.shift();
-
-            // Play the strumline animation.
-            playerStrumline.playStatic(input.noteDirection);
-            playerStrumline.releaseKey(input.noteDirection);
-        }
     }
 }
