@@ -1,0 +1,13 @@
+{
+  "title": "Multikey",
+  "description": "A Funkin mod that adds multikey support to the game !",
+  "contributors": [
+    {
+      "name": "ImVeryBad",
+      "role": "Developer"
+    }
+  ],
+  "api_version": "0.5.3",
+  "mod_version": "0.0.0-beta",
+  "license": "MIT"
+}
