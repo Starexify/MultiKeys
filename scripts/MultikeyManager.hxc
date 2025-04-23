@@ -264,8 +264,5 @@ class MultikeyManager extends ScriptedModule {
 
     override function onSongEnd(event:ScriptEvent) { state = null; }
 
-    override function onDestroy(event:ScriptEvent) {
-        state = null;
-        playerStrumline = null;
-    }
+    override function onDestroy(event:ScriptEvent) { state = null; }
 }
