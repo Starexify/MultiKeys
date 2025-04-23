@@ -1,15 +1,22 @@
 import funkin.PlayerSettings;
+import funkin.data.song.importer.FNFLegacyImporter;
 import funkin.input.Control;
 import funkin.input.Controls;
 import funkin.input.PreciseInputManager;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
+import funkin.play.PauseSubState;
 import funkin.play.PlayState;
 import funkin.play.notes.NoteSprite;
 import funkin.play.notes.Strumline;
+import funkin.ui.debug.charting.ChartEditorState;
+import funkin.ui.debug.charting.handlers.ChartEditorThemeHandler;
 
+import flixel.FlxG;
 import flixel.input.FlxInput;
 import flixel.math.FlxMath;
+
+import Lambda;
 
 class MultikeyManager extends ScriptedModule {
     var NOTE_GAPS = [112, 112, 112, 112, 112, 105, 85, 80, 70, 65];
@@ -32,39 +39,62 @@ class MultikeyManager extends ScriptedModule {
     var playerStrumline:Strumline;
     var inputPressQueue:Array<PreciseInputEvent> = [];
     var inputReleaseQueue:Array<PreciseInputEvent> = [];
-    var justPressedActions = [];
-    var justReleasedActions = [];
 
     function new() {
         super("MultikeyManager", FlxMath.MIN_VALUE_INT);
     }
 
+    function onStateChange(state) {
+        if (Std.isOfType(state, PlayState)) setupMultikey();
+    }
+
+    override function onStateChangeBegin(event:StateChangeScriptEvent) {
+        FlxG.signals.preStateCreate.addOnce(onStateChange);
+    }
+
+    override function onSubStateOpenBegin(event:SubStateScriptEvent) {
+        if (!Std.isOfType(event.targetState, PlayState) && !Std.isOfType(event.targetState, PauseSubState)) state = null;
+        onStateChange(event.targetState);
+    }
+
+    override function onStateChangeEnd(event:StateChangeScriptEvent) {
+        if (Std.isOfType(event.targetState, ChartEditorState)) {
+            for (waveform in event.targetState.audioWaveforms) {
+                if (waveform.x == 840) {
+                    var offset = (Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) - 160;
+                    waveform.x += offset;
+                }
+                else if (waveform.x == 360) {
+                    var offset = -(Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) + 160;
+                    waveform.x += offset;
+                }
+            }
+            event.targetState.buttonSelectOpponent.width = ChartEditorState.GRID_SIZE * Strumline.KEY_COUNT;
+            event.targetState.buttonSelectPlayer.width = ChartEditorState.GRID_SIZE * Strumline.KEY_COUNT;
+            event.targetState.buttonSelectPlayer.x = event.targetState.buttonSelectOpponent.x + event.targetState.buttonSelectOpponent.width;
+            event.targetState.buttonSelectEvent.x = event.targetState.buttonSelectPlayer.x + event.targetState.buttonSelectPlayer.width;
+        }
+    }
+
+    function setupMultikey() {
+        Strumline.KEY_COUNT = 7;
+
+        ChartEditorState.STRUMLINE_SIZE = Strumline.KEY_COUNT;
+        ChartEditorThemeHandler.TOTAL_COLUMN_COUNT = ChartEditorState.STRUMLINE_SIZE * 2 + 1;
+        ChartEditorState.NOTE_PREVIEW_X_POS = -(Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) + 480;
+        FNFLegacyImporter.STRUMLINE_SIZE = Strumline.KEY_COUNT;
+        Strumline.STRUMLINE_SIZE = Std.int(104 * NOTE_SCALES[Strumline.KEY_COUNT]);
+        Strumline.NOTE_SPACING = NOTE_GAPS[Strumline.KEY_COUNT];
+    }
+
     override function onSongLoaded(event:SongLoadScriptEvent) {
-        if (PlayState.instance == null) return;
+        if (PlayState.instance == null && Strumline.KEY_COUNT == 4) return;
         state = PlayState.instance;
         playerStrumline = state.playerStrumline;
 
-        if (Strumline.KEY_COUNT != 4) {
-            justPressedActions = [];
-            justReleasedActions = [];
-
-            var totalKeys = Strumline.KEY_COUNT;
-            var notesArray = playerStrumline.strumlineNotes.members;
-            var baseSpacing = 0;
-            if (notesArray.length >= 2) {
-                baseSpacing = Std.int(notesArray[1].x - notesArray[0].x);
-            }
-
-            for (i in 4...totalKeys) {
-                if (i < notesArray.length) {
-                    var note = notesArray[i];
-                    var prevNote = notesArray[i - 1];
-                    note.direction = DIRECTIONS[i % NOTE_DIRECTIONS.length];
-                    note.x = prevNote.x + baseSpacing;
-                    trace("[MK] Processed extra note: Direction = " + note.direction + ", Index = " + i);
-                }
-            }
-        }
+        var totalKeys = Strumline.KEY_COUNT;
+        processExtraNotes(playerStrumline, totalKeys);
+        processExtraNotes(state.opponentStrumline, totalKeys);
     }
 
     override function onCountdownStart(event:CountdownScriptEvent) {
@@ -73,20 +103,8 @@ class MultikeyManager extends ScriptedModule {
 
     override function onUpdate(event:UpdateScriptEvent) {
         // Handle keybinds.
-        if (state == null) return;
+        if (state == null || Strumline.KEY_COUNT == 4) return;
         processInputQueue();
-    }
-
-    override function onSongRetry(event:SongRetryEvent) {
-        state = null;
-        playerStrumline = null;
-        inputPressQueue = [];
-        inputReleaseQueue = [];
-    }
-
-    override function onDestroy(event:ScriptEvent) {
-        state = null;
-        playerStrumline = null;
     }
 
     function mapToBaseDirection(extendedDirection):Int {
@@ -128,16 +146,16 @@ class MultikeyManager extends ScriptedModule {
 
                 // Play the strumline animation.
                 playerStrumline.getByIndex(DIRECTIONS.indexOf(input.noteDirection)).playPress();
-                trace('PENALTY Score: ${state.songScore}');
+                trace("PENALTY Score: " + state.songScore);
             } else if (notesInDirection.length == 0) {
                 // Press a key with no penalty.
 
                 // Play the strumline animation.
                 playerStrumline.getByIndex(DIRECTIONS.indexOf(input.noteDirection)).playPress();
-                trace('NO PENALTY Score: ${state.songScore}');
+                trace("NO PENALTY Score: " + state.songScore);
             } else {
                 // Choose the first note, deprioritizing low priority notes.
-                var targetNote:Null<NoteSprite> = notesInDirection.find((note) -> !note.lowPriority);
+                var targetNote:Null<NoteSprite> = Lambda.find(notesInDirection, note -> !note.lowPriority);
                 if (targetNote == null) targetNote = notesInDirection[0];
                 if (targetNote == null) continue;
 
@@ -188,13 +206,6 @@ class MultikeyManager extends ScriptedModule {
 
     function initializeCustomKeyMapping(inputManager) {
         var controls = PlayerSettings.player1.controls;
-        controls.bindKeys(Control.NOTE_LEFT, controls.getDefaultKeybinds(controls.keyboardScheme, Control.NOTE_LEFT));
-        controls.bindKeys(Control.NOTE_DOWN, controls.getDefaultKeybinds(controls.keyboardScheme, Control.NOTE_DOWN));
-        controls.bindKeys(Control.NOTE_RIGHT, controls.getDefaultKeybinds(controls.keyboardScheme, Control.NOTE_RIGHT));
-        controls.bindKeys(Control.FREEPLAY_FAVORITE, controls.getDefaultKeybinds(controls.keyboardScheme, Control.FREEPLAY_FAVORITE));
-        controls.bindKeys(Control.DEBUG_MENU, controls.getDefaultKeybinds(controls.keyboardScheme, Control.DEBUG_MENU));
-        controls.bindKeys(Control.NOTE_UP, controls.getDefaultKeybinds(controls.keyboardScheme, Control.NOTE_UP));
-        controls.bindKeys(Control.FREEPLAY_LEFT, controls.getDefaultKeybinds(controls.keyboardScheme, Control.FREEPLAY_LEFT));
 
         initializeKeys(inputManager, controls);
     }
@@ -226,5 +237,35 @@ class MultikeyManager extends ScriptedModule {
             case 8: controls.getKeysForAction("freeplay_left");
             case 9: controls.getKeysForAction("freeplay_left");
         };
+    }
+
+    // Helper Methods
+    function processExtraNotes(strumline:Strumline, totalKeys:Int) {
+        var notesArray = strumline.strumlineNotes.members;
+        var baseSpacing = 0;
+        if (notesArray.length >= 2) {
+            baseSpacing = Std.int(notesArray[1].x - notesArray[0].x);
+        }
+
+        for (i in 4...totalKeys) {
+            if (i < notesArray.length) {
+                var note = notesArray[i];
+                var prevNote = notesArray[i - 1];
+                note.direction = NOTE_DIRECTIONS[i][i % NOTE_DIRECTIONS.length];
+                note.x = prevNote.x + baseSpacing;
+                trace("[MK] Processed extra note: Direction = " + note.direction + ", Index = " + i +
+                (strumline == playerStrumline ? " (Player)" : " (Opponent)"));
+            }
+        }
+    }
+
+    // Cleanup
+    override function onSubStateCloseBegin(event:SubStateScriptEvent) { if (Std.isOfType(event.targetState, PlayState)) state = null; }
+
+    override function onSongEnd(event:ScriptEvent) { state = null; }
+
+    override function onDestroy(event:ScriptEvent) {
+        state = null;
+        playerStrumline = null;
     }
 }

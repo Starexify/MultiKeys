@@ -1,0 +1,81 @@
+import funkin.Highscore;
+import funkin.modding.events.ScriptEvent;
+import funkin.modding.module.ScriptedModule;
+import funkin.play.PlayState;
+import funkin.play.notes.Strumline;
+
+class NoteSpawnFix extends ScriptedModule {
+    var state:PlayState;
+
+    function new() {
+        super("NoteSpawnFix", 1);
+    }
+
+    override function onSongLoaded(event:SongLoadScriptEvent) {
+        if (PlayState.instance == null && Strumline.KEY_COUNT == 4) return;
+        state = PlayState.instance;
+    }
+
+    override function onCountdownStart(event:CountdownScriptEvent) {
+        if (Strumline.KEY_COUNT != 4) regenNoteData();
+    }
+
+    override function onNoteIncoming(event:NoteScriptEvent) {
+        if (Strumline.KEY_COUNT == 4) return;
+
+        event.note.direction = event.note.noteData.data % Strumline.KEY_COUNT;
+        //event.note.animation.play(noteColors[multikeyColorIndex[Strumline.KEY_COUNT][event.note.direction]] + "Scroll");
+        event.note.x -= PlayState.instance.playerStrumline.getXPos(event.note.noteData.data % 4);
+        event.note.x += Strumline.NOTE_SPACING * event.note.direction;
+        if (event.note.get_isHoldNote()) {
+            //set correct color for sustain
+            //event.note.holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + noteColors[multikeyColorIndex[Strumline.KEY_COUNT][event.note.direction]]));
+            event.note.holdNoteSprite.noteDirection = event.note.direction;
+            event.note.holdNoteSprite.graphicWidth = event.note.holdNoteSprite.graphic.width / 8 * event.note.holdNoteSprite.zoom;
+            event.note.holdNoteSprite.graphicHeight = event.note.holdNoteSprite.sustainLength * 0.45 * event.note.holdNoteSprite.getScrollSpeed();
+            event.note.holdNoteSprite.updateColorTransform();
+            event.note.holdNoteSprite.updateClipping();
+            event.note.holdNoteSprite.updateHitbox();
+
+            event.note.holdNoteSprite.x = event.note.x + (Strumline.STRUMLINE_SIZE / 2) - (event.note.holdNoteSprite.get_width() / 2);
+        }
+    }
+
+    override function onUpdate(event:UpdateScriptEvent) {
+        if (state == null || Strumline.KEY_COUNT == 4) return;
+        if (state.needsReset) regenNoteData();
+    }
+
+  /**
+    * Regens the Note Data with the multikey directions
+    */
+    function regenNoteData() {
+        state.playerStrumline.clean();
+        state.opponentStrumline.clean();
+
+        Highscore.tallies.combo = 0;
+        Highscore.tallies.totalNotes = 0;
+        // Highscore.tallies = new Tallies();
+
+        // Reset the notes on each strumline.
+        var playerNoteData = [];
+        var opponentNoteData = [];
+        var noteData = state.currentChart.notes;
+
+        for (songNote in noteData) {
+            var strumTime:Float = songNote.time;
+            if (strumTime < 0) continue; // Skip notes that are before the start time.
+
+            switch (songNote.getStrumlineIndex(Strumline.KEY_COUNT)) {
+                case 0:
+                    playerNoteData.push(songNote);
+                    Highscore.tallies.totalNotes++;
+                case 1:
+                    opponentNoteData.push(songNote);
+            }
+        }
+
+        state.playerStrumline.applyNoteData(playerNoteData);
+        state.opponentStrumline.applyNoteData(opponentNoteData);
+    }
+}
