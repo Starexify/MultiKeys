@@ -1,0 +1,22 @@
+import funkin.modding.module.Module;
+import funkin.util.logging.AnsiTrace;
+import haxe.Log;
+import StringTools;
+
+/**
+  * Script made by Kolo `@koloindacrib` for removing spammy Funkin' traces //TODO Remove on release/public
+  **/
+class RemoveBaseTraces extends Module {
+    public function new() {
+        super("RemoveBaseTraces");
+    }
+
+    override function onCreate(event) {
+        Log.trace = traceOverride;
+    }
+
+    function traceOverride(v:Dynamic, pos:Dynamic) {
+        if (!StringTools.startsWith(pos.fileName, "hscriptClass")) return;
+        AnsiTrace.trace(v, pos);
+    }
+}
