@@ -1,12 +1,12 @@
 import funkin.PlayerSettings;
-import funkin.modding.module.ScriptedModule;
-import funkin.modding.events.ScriptEvent;
-import funkin.play.notes.Strumline;
-import funkin.play.PlayState;
-import funkin.input.PreciseInputManager;
-import funkin.play.notes.NoteSprite;
-import funkin.input.Controls;
 import funkin.input.Control;
+import funkin.input.Controls;
+import funkin.input.PreciseInputManager;
+import funkin.modding.events.ScriptEvent;
+import funkin.modding.module.ScriptedModule;
+import funkin.play.PlayState;
+import funkin.play.notes.NoteSprite;
+import funkin.play.notes.Strumline;
 
 import flixel.input.FlxInput;
 
@@ -124,6 +124,8 @@ class MultikeyManager extends ScriptedModule {
                 state.ghostNoteMiss(baseDirection, notesInRange.length > 0);
 
                 // Play the strumline animation.
+                trace("(MK) " + input.noteDirection);
+                trace("(MK) " + baseDirection);
                 playerStrumline.playPress(baseDirection);
                 trace('PENALTY Score: ${state.songScore}');
             } else if (notesInDirection.length == 0) {
@@ -170,12 +172,18 @@ class MultikeyManager extends ScriptedModule {
         initializeCustomKeyMapping(inputManager);
     }
 
+    /**
+     * Callback executed when one of the note keys is pressed.
+     */
     function onKeyPress(event:PreciseInputEvent) {
-        if (state != null && state.isGamePaused) inputPressQueue.push(event);
+        if (!state.isGamePaused) inputPressQueue.push(event);
     }
 
+    /**
+     * Callback executed when one of the note keys is released.
+     */
     function onKeyRelease(event:PreciseInputEvent) {
-        if (state != null && state.isGamePaused) inputReleaseQueue.push(event);
+        if (!state.isGamePaused) inputReleaseQueue.push(event);
     }
 
     function initializeCustomKeyMapping(inputManager) {
