@@ -9,6 +9,7 @@ import funkin.play.notes.NoteSprite;
 import funkin.play.notes.Strumline;
 
 import flixel.input.FlxInput;
+import flixel.math.FlxMath;
 
 class MultikeyManager extends ScriptedModule {
     var NOTE_GAPS = [112, 112, 112, 112, 112, 105, 85, 80, 70, 65];
@@ -35,7 +36,7 @@ class MultikeyManager extends ScriptedModule {
     var justReleasedActions = [];
 
     function new() {
-        super("MultikeyManager", 1001);
+        super("MultikeyManager", FlxMath.MIN_VALUE_INT);
     }
 
     override function onSongLoaded(event:SongLoadScriptEvent) {
@@ -63,8 +64,11 @@ class MultikeyManager extends ScriptedModule {
                     trace("[MK] Processed extra note: Direction = " + note.direction + ", Index = " + i);
                 }
             }
-            initPreciseInputs();
         }
+    }
+
+    override function onCountdownStart(event:CountdownScriptEvent) {
+        if (Strumline.KEY_COUNT != 4) initPreciseInputs();
     }
 
     override function onUpdate(event:UpdateScriptEvent) {
@@ -85,8 +89,8 @@ class MultikeyManager extends ScriptedModule {
         playerStrumline = null;
     }
 
-    function mapToBaseDirection(extendedDirection:Int):Int {
-        return extendedDirection % 4;
+    function mapToBaseDirection(extendedDirection):Int {
+        return extendedDirection;
     }
 
     function processInputQueue() {
@@ -107,13 +111,12 @@ class MultikeyManager extends ScriptedModule {
         for (note in notesInRange) notesByDirection[note.direction].push(note);
         while (inputPressQueue.length > 0) {
             var input:PreciseInputEvent = inputPressQueue.shift();
-            var baseDirection = mapToBaseDirection(input.noteDirection);
-            playerStrumline.pressKey(baseDirection);
+            playerStrumline.pressKey(input.noteDirection);
 
             // Don't credit or penalize inputs in Bot Play.
             if (state.isBotPlayMode) continue;
 
-            var notesInDirection:Array<NoteSprite> = notesByDirection[baseDirection];
+            var notesInDirection:Array<NoteSprite> = notesByDirection[input.noteDirection];
 
             #if FEATURE_GHOST_TAPPING
             if ((!playerStrumline.mayGhostTap()) && notesInDirection.length == 0)
@@ -121,18 +124,16 @@ class MultikeyManager extends ScriptedModule {
             if (notesInDirection.length == 0) #end {
                 // Pressed a wrong key with no notes nearby.
                 // Perform a ghost miss (anti-spam).
-                state.ghostNoteMiss(baseDirection, notesInRange.length > 0);
+                state.ghostNoteMiss(input.noteDirection, notesInRange.length > 0);
 
                 // Play the strumline animation.
-                trace("(MK) " + input.noteDirection);
-                trace("(MK) " + baseDirection);
-                playerStrumline.playPress(baseDirection);
+                playerStrumline.getByIndex(DIRECTIONS.indexOf(input.noteDirection)).playPress();
                 trace('PENALTY Score: ${state.songScore}');
             } else if (notesInDirection.length == 0) {
                 // Press a key with no penalty.
 
                 // Play the strumline animation.
-                playerStrumline.playPress(baseDirection);
+                playerStrumline.getByIndex(DIRECTIONS.indexOf(input.noteDirection)).playPress();
                 trace('NO PENALTY Score: ${state.songScore}');
             } else {
                 // Choose the first note, deprioritizing low priority notes.
@@ -146,17 +147,16 @@ class MultikeyManager extends ScriptedModule {
                 notesInDirection.remove(targetNote);
 
                 // Play the strumline animation.
-                playerStrumline.playConfirm(baseDirection);
+                playerStrumline.playConfirm(input.noteDirection);
             }
         }
 
         while (inputReleaseQueue.length > 0) {
             var input:PreciseInputEvent = inputReleaseQueue.shift();
-            var baseDirection = mapToBaseDirection(input.noteDirection);
 
             // Play the strumline animation.
-            playerStrumline.playStatic(baseDirection);
-            playerStrumline.releaseKey(baseDirection);
+            playerStrumline.getByIndex(DIRECTIONS.indexOf(input.noteDirection)).playStatic();
+            playerStrumline.releaseKey(input.noteDirection);
         }
     }
 
