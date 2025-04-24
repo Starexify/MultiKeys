@@ -77,14 +77,17 @@ class MultikeyManager extends ScriptedModule {
     }
 
     function setupMultikey() {
-        Strumline.KEY_COUNT = 7;
+        Strumline.KEY_COUNT = 4;
 
+        Strumline.KEY_COUNT = 7;
         ChartEditorState.STRUMLINE_SIZE = Strumline.KEY_COUNT;
         ChartEditorThemeHandler.TOTAL_COLUMN_COUNT = ChartEditorState.STRUMLINE_SIZE * 2 + 1;
         ChartEditorState.NOTE_PREVIEW_X_POS = -(Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) + 480;
         FNFLegacyImporter.STRUMLINE_SIZE = Strumline.KEY_COUNT;
         Strumline.STRUMLINE_SIZE = Std.int(104 * NOTE_SCALES[Strumline.KEY_COUNT]);
         Strumline.NOTE_SPACING = NOTE_GAPS[Strumline.KEY_COUNT];
+        Strumline.DIRECTIONS = [];
+        for (i in 0...Strumline.KEY_COUNT) Strumline.DIRECTIONS.push(i);
     }
 
     override function onSongLoaded(event:SongLoadScriptEvent) {
@@ -165,7 +168,7 @@ class MultikeyManager extends ScriptedModule {
                 notesInDirection.remove(targetNote);
 
                 // Play the strumline animation.
-                playerStrumline.playConfirm(input.noteDirection);
+                playerStrumline.getByIndex(DIRECTIONS.indexOf(input.noteDirection)).playConfirm();
             }
         }
 
@@ -251,7 +254,7 @@ class MultikeyManager extends ScriptedModule {
             if (i < notesArray.length) {
                 var note = notesArray[i];
                 var prevNote = notesArray[i - 1];
-                note.direction = NOTE_DIRECTIONS[i][i % NOTE_DIRECTIONS.length];
+                note.direction = NOTE_DIRECTIONS[totalKeys][i % NOTE_DIRECTIONS.length];
                 note.x = prevNote.x + baseSpacing;
                 trace("[MK] Processed extra note: Direction = " + note.direction + ", Index = " + i +
                 (strumline == playerStrumline ? " (Player)" : " (Opponent)"));
