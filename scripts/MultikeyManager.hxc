@@ -19,22 +19,6 @@ import flixel.math.FlxMath;
 import Lambda;
 
 class MultikeyManager extends ScriptedModule {
-    var NOTE_GAPS = [112, 112, 112, 112, 112, 105, 85, 80, 70, 65];
-    var NOTE_SCALES = [1, 1, 1, 1, 1, 0.95, 0.9, 0.85, 0.8, 0.75];
-    var NOTE_DIRECTIONS:Array<Array<Int>> = [
-        [2],
-        [0, 3],
-        [0, 2, 3],
-        [0, 1, 2, 3],
-        [0, 1, 2, 2, 3],
-        [0, 2, 3, 0, 1, 3],
-        [0, 2, 3, 2, 0, 1, 3],
-        [0, 1, 2, 3, 0, 1, 2, 3],
-        [0, 1, 2, 3, 2, 0, 1, 2, 3],
-    ];
-
-    var DIRECTIONS:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9];
-
     var state:PlayState;
     var playerStrumline:Strumline;
     var inputPressQueue:Array<PreciseInputEvent> = [];
@@ -79,13 +63,13 @@ class MultikeyManager extends ScriptedModule {
     function setupMultikey() {
         Strumline.KEY_COUNT = 4;
 
-        Strumline.KEY_COUNT = 7;
+        Strumline.KEY_COUNT = 6;
         ChartEditorState.STRUMLINE_SIZE = Strumline.KEY_COUNT;
         ChartEditorThemeHandler.TOTAL_COLUMN_COUNT = ChartEditorState.STRUMLINE_SIZE * 2 + 1;
         ChartEditorState.NOTE_PREVIEW_X_POS = -(Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) + 480;
         FNFLegacyImporter.STRUMLINE_SIZE = Strumline.KEY_COUNT;
-        Strumline.STRUMLINE_SIZE = Std.int(104 * NOTE_SCALES[Strumline.KEY_COUNT]);
-        Strumline.NOTE_SPACING = NOTE_GAPS[Strumline.KEY_COUNT];
+        Strumline.STRUMLINE_SIZE = Std.int(104 * new MultikeyHooks().NOTE_SCALES[Strumline.KEY_COUNT]);
+        Strumline.NOTE_SPACING = new MultikeyHooks().NOTE_GAPS[Strumline.KEY_COUNT];
         Strumline.DIRECTIONS = [];
         for (i in 0...Strumline.KEY_COUNT) Strumline.DIRECTIONS.push(i);
     }
@@ -148,13 +132,13 @@ class MultikeyManager extends ScriptedModule {
                 state.ghostNoteMiss(input.noteDirection, notesInRange.length > 0);
 
                 // Play the strumline animation.
-                playerStrumline.getByIndex(DIRECTIONS.indexOf(input.noteDirection)).playPress();
+                playerStrumline.getByIndex(new MultikeyHooks().DIRECTIONS.indexOf(input.noteDirection)).playPress();
                 trace("PENALTY Score: " + state.songScore);
             } else if (notesInDirection.length == 0) {
                 // Press a key with no penalty.
 
                 // Play the strumline animation.
-                playerStrumline.getByIndex(DIRECTIONS.indexOf(input.noteDirection)).playPress();
+                playerStrumline.getByIndex(new MultikeyHooks().DIRECTIONS.indexOf(input.noteDirection)).playPress();
                 trace("NO PENALTY Score: " + state.songScore);
             } else {
                 // Choose the first note, deprioritizing low priority notes.
@@ -168,7 +152,7 @@ class MultikeyManager extends ScriptedModule {
                 notesInDirection.remove(targetNote);
 
                 // Play the strumline animation.
-                playerStrumline.getByIndex(DIRECTIONS.indexOf(input.noteDirection)).playConfirm();
+                playerStrumline.getByIndex(new MultikeyHooks().DIRECTIONS.indexOf(input.noteDirection)).playConfirm();
             }
         }
 
@@ -176,7 +160,7 @@ class MultikeyManager extends ScriptedModule {
             var input:PreciseInputEvent = inputReleaseQueue.shift();
 
             // Play the strumline animation.
-            playerStrumline.getByIndex(DIRECTIONS.indexOf(input.noteDirection)).playStatic();
+            playerStrumline.getByIndex(new MultikeyHooks().DIRECTIONS.indexOf(input.noteDirection)).playStatic();
             playerStrumline.releaseKey(input.noteDirection);
         }
     }
@@ -215,7 +199,7 @@ class MultikeyManager extends ScriptedModule {
 
     function initializeKeys(inputManager:PreciseInputManager, controls:Controls) {
         inputManager.clearKeys();
-        for (noteDirection in DIRECTIONS) {
+        for (noteDirection in new MultikeyHooks().DIRECTIONS) {
             var keys = getKeysForDirection(controls, noteDirection);
             for (key in keys) {
                 var input = new FlxInput(key);
@@ -238,7 +222,6 @@ class MultikeyManager extends ScriptedModule {
             case 6: controls.getKeysForAction("freeplay_left");
             case 7: controls.getKeysForAction("freeplay_left");
             case 8: controls.getKeysForAction("freeplay_left");
-            case 9: controls.getKeysForAction("freeplay_left");
         };
     }
 
@@ -254,10 +237,9 @@ class MultikeyManager extends ScriptedModule {
             if (i < notesArray.length) {
                 var note = notesArray[i];
                 var prevNote = notesArray[i - 1];
-                note.direction = NOTE_DIRECTIONS[totalKeys][i % NOTE_DIRECTIONS.length];
-                note.x = prevNote.x + baseSpacing;
-                trace("[MK] Processed extra note: Direction = " + note.direction + ", Index = " + i +
-                (strumline == playerStrumline ? " (Player)" : " (Opponent)"));
+                //note.x = prevNote.x + baseSpacing;
+                note.direction = new MultikeyHooks().NOTE_DIRECTIONS[totalKeys][i % new MultikeyHooks().NOTE_DIRECTIONS.length];
+                trace("[MK] Processed extra note: Direction = " + note.direction + ", Index = " + i + (strumline == playerStrumline ? " (Player)" : " (Opponent)"));
             }
         }
     }

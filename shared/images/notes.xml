@@ -1,0 +1,14 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TextureAtlas imagePath="NOTE_assetsArrows.png">
+	<!-- Created with Adobe Animate version 24.0.0.305 -->
+	<!-- http://www.adobe.com/products/animate.html -->
+	<SubTexture name="blue0000" x="4" y="4" width="157" height="154"/>
+	<SubTexture name="dark0000" x="165" y="4" width="154" height="157"/>
+	<SubTexture name="darkred0000" x="323" y="4" width="157" height="154"/>
+	<SubTexture name="green0000" x="4" y="165" width="157" height="154"/>
+	<SubTexture name="purple0000" x="165" y="165" width="154" height="157"/>
+	<SubTexture name="red0000" x="323" y="165" width="154" height="157"/>
+	<SubTexture name="violet0000" x="4" y="326" width="157" height="154"/>
+	<SubTexture name="white0000" x="165" y="326" width="152" height="153"/>
+	<SubTexture name="yellow0000" x="321" y="326" width="154" height="157"/>
+</TextureAtlas>

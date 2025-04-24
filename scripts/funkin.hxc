@@ -1,0 +1,68 @@
+import funkin.data.animation.AnimationDataUtil;
+import funkin.play.notes.Strumline;
+import funkin.play.notes.notestyle.ScriptedNoteStyle;
+import funkin.play.notes.NoteSprite;
+import funkin.play.notes.StrumlineNote;
+
+class FunkinNoteStyle extends ScriptedNoteStyle {
+    function new() {
+        super("funkin");
+    }
+
+    override function isNoteSplashEnabled() {
+        if (!super.isNoteSplashEnabled()) return false;
+        return Strumline.KEY_COUNT == 4;
+    }
+
+    override function isHoldNoteCoverEnabled() {
+        if (!super.isHoldNoteCoverEnabled()) return false;
+        return Strumline.KEY_COUNT == 4;
+    }
+
+    override function fetchHoldNoteScale() {
+        var scale = super.fetchHoldNoteScale();
+        return scale * new MultikeyHooks().NOTE_SCALES[Strumline.KEY_COUNT];
+    }
+
+    override function getStrumlineAnimationData(dir) {
+        var dir = new MultikeyHooks().MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir];
+
+        var staticName = "arrow" + new MultikeyHooks().DIRECTION_NAMES[dir];
+        var pressName = new MultikeyHooks().NOTE_COLORS[dir] + " press";
+        var confirmName = new MultikeyHooks().NOTE_COLORS[dir] + " confirm";
+
+        return [
+            AnimationDataUtil.toNamed({prefix: staticName}, "static"),
+            AnimationDataUtil.toNamed({prefix: pressName}, "press"),
+            AnimationDataUtil.toNamed({prefix: confirmName}, "confirm"),
+            AnimationDataUtil.toNamed({prefix: confirmName}, "confirm-hold")
+        ];
+    }
+
+    override public function applyStrumlineOffsets(target:StrumlineNote) {
+        super.applyStrumlineOffsets(target);
+        target.x -= getXPos(target.direction);
+        target.x += Strumline.NOTE_SPACING * target.direction;
+        target.x += Strumline.NUDGE;
+    }
+
+    override function buildNoteAnimations(target:NoteSprite) {
+        for (i in 0...new MultikeyHooks().NOTE_COLORS.length)
+            target.animation.addByPrefix(new MultikeyHooks().NOTE_COLORS[i] + "Scroll", new MultikeyHooks().NOTE_COLORS[i]);
+    }
+
+    function getXPos(direction) {
+        switch (direction) {
+            case 0:
+                return 0;
+            case 1:
+                return Strumline.NOTE_SPACING;
+            case 2:
+                return 2 * Strumline.NOTE_SPACING;
+            case 3:
+                return 3 * Strumline.NOTE_SPACING;
+            default:
+                return 0;
+        }
+    }
+}

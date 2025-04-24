@@ -24,12 +24,12 @@ class NoteSpawnFix extends ScriptedModule {
         if (Strumline.KEY_COUNT == 4) return;
 
         event.note.direction = event.note.noteData.data % Strumline.KEY_COUNT;
-        //event.note.animation.play(noteColors[multikeyColorIndex[Strumline.KEY_COUNT][event.note.direction]] + "Scroll");
+        event.note.animation.play(new MultikeyHooks().NOTE_COLORS[new MultikeyHooks().MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.direction]] + "Scroll");
         event.note.x -= PlayState.instance.playerStrumline.getXPos(event.note.noteData.data % 4);
         event.note.x += Strumline.NOTE_SPACING * event.note.direction;
         if (event.note.get_isHoldNote()) {
             //set correct color for sustain
-            //event.note.holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + noteColors[multikeyColorIndex[Strumline.KEY_COUNT][event.note.direction]]));
+            event.note.holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + new MultikeyHooks().NOTE_COLORS[new MultikeyHooks().MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.direction]]));
             event.note.holdNoteSprite.noteDirection = event.note.direction;
             event.note.holdNoteSprite.graphicWidth = event.note.holdNoteSprite.graphic.width / 8 * event.note.holdNoteSprite.zoom;
             event.note.holdNoteSprite.updateColorTransform();
@@ -46,7 +46,7 @@ class NoteSpawnFix extends ScriptedModule {
         if (state.needsReset) regenNoteData();
     }
 
-  /**
+    /**
     * Regens the Note Data with the multikey directions
     */
     function regenNoteData() {
