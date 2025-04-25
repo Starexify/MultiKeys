@@ -20,13 +20,19 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     }
 
     override function fetchHoldNoteScale() {
-        var scale = super.fetchHoldNoteScale();
-        return scale * new MultikeyHooks().NOTE_SCALES[Strumline.KEY_COUNT];
+        return super.fetchHoldNoteScale() * new MultikeyHooks().NOTE_SCALES[Strumline.KEY_COUNT];
+    }
+
+    override function getNoteScale() {
+        return super.getNoteScale() * new MultikeyHooks().NOTE_SCALES[Strumline.KEY_COUNT];
+    }
+
+    override function getStrumlineScale() {
+        return super.getStrumlineScale() * new MultikeyHooks().NOTE_SCALES[Strumline.KEY_COUNT];
     }
 
     override function getStrumlineAnimationData(dir) {
         var dir = new MultikeyHooks().MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir];
-
         var staticName = "arrow" + new MultikeyHooks().DIRECTION_NAMES[dir];
         var pressName = new MultikeyHooks().NOTE_COLORS[dir] + " press";
         var confirmName = new MultikeyHooks().NOTE_COLORS[dir] + " confirm";

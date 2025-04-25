@@ -1,0 +1,35 @@
+import funkin.modding.base.ScriptedMusicBeatSubState;
+import funkin.modding.events.ScriptEvent;
+import funkin.modding.module.ScriptedModule;
+import funkin.ui.options.OptionsState;
+import flixel.FlxG;
+
+class MultikeyOptions extends ScriptedModule {
+    var DEFAULT_KEYBINDS = [
+        [[32, 0]],
+        [[68, 0], [75, 0]],
+        [[68, 0], [32, 0], [75, 0]],
+        [[68, 0], [70, 0], [74, 0], [75, 0]],
+        [[68, 0], [70, 0], [32, 0], [74, 0], [75, 0]],
+        [[83, 0], [68, 0], [70, 0], [74, 0], [75, 0], [76, 0]],
+        [[83, 0], [68, 0], [70, 0], [32, 0], [74, 0], [75, 0], [76, 0]],
+        [[65, 0], [83, 0], [68, 0], [70, 0], [72, 0], [74, 0], [75, 0], [76, 0]],
+        [[65, 0], [83, 0], [68, 0], [70, 0], [32, 0], [72, 0], [74, 0], [75, 0], [76, 0]],
+    ];
+
+    function new() {
+        super("MultikeyOptions");
+    }
+
+    override function onStateChangeEnd(event:StateChangeScriptEvent) {
+        if (Std.isOfType(event.targetState, OptionsState)) {
+            // MultiKeys Controls Entry
+            var options:OptionsMenu = event.targetState.optionsCodex.get_currentPage();
+            //for (optionEntries in options.items.members) optionEntries.y = 0;
+
+            var mkControls = options.items.createItem(0, (options.items.length - 1) * 100, "Fuck", "bold", () -> FlxG.state.openSubState(ScriptedMusicBeatSubState.init("ui.options.HUDManagerState")));
+            mkControls.x = (FlxG.width - mkControls.width) / 2;
+        }
+    }
+
+}

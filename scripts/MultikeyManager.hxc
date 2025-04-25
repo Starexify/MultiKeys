@@ -63,7 +63,7 @@ class MultikeyManager extends ScriptedModule {
     function setupMultikey() {
         Strumline.KEY_COUNT = 4;
 
-        Strumline.KEY_COUNT = 6;
+        Strumline.KEY_COUNT = 7;
         ChartEditorState.STRUMLINE_SIZE = Strumline.KEY_COUNT;
         ChartEditorThemeHandler.TOTAL_COLUMN_COUNT = ChartEditorState.STRUMLINE_SIZE * 2 + 1;
         ChartEditorState.NOTE_PREVIEW_X_POS = -(Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) + 480;
@@ -92,10 +92,6 @@ class MultikeyManager extends ScriptedModule {
         // Handle keybinds.
         if (state == null || Strumline.KEY_COUNT == 4) return;
         processInputQueue();
-    }
-
-    function mapToBaseDirection(extendedDirection):Int {
-        return extendedDirection;
     }
 
     function processInputQueue() {
@@ -228,18 +224,11 @@ class MultikeyManager extends ScriptedModule {
     // Helper Methods
     function processExtraNotes(strumline:Strumline, totalKeys:Int) {
         var notesArray = strumline.strumlineNotes.members;
-        var baseSpacing = 0;
-        if (notesArray.length >= 2) {
-            baseSpacing = Std.int(notesArray[1].x - notesArray[0].x);
-        }
 
         for (i in 4...totalKeys) {
             if (i < notesArray.length) {
-                var note = notesArray[i];
-                var prevNote = notesArray[i - 1];
-                //note.x = prevNote.x + baseSpacing;
-                note.direction = new MultikeyHooks().NOTE_DIRECTIONS[totalKeys][i % new MultikeyHooks().NOTE_DIRECTIONS.length];
-                trace("[MK] Processed extra note: Direction = " + note.direction + ", Index = " + i + (strumline == playerStrumline ? " (Player)" : " (Opponent)"));
+                notesArray[i].direction = new MultikeyHooks().NOTE_DIRECTIONS[totalKeys][i % new MultikeyHooks().NOTE_DIRECTIONS.length];
+                trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == playerStrumline ? " (Player)" : " (Opponent)"));
             }
         }
     }
