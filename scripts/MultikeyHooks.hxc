@@ -2,14 +2,14 @@ import funkin.modding.module.ScriptedModule;
 import flixel.math.FlxMath;
 
 class MultikeyHooks extends ScriptedModule {
-    var NOTE_GAPS = [112, 112, 112, 112, 112, 105, 85, 80, 70, 65];
-    var NOTE_SCALES = [1, 1, 1, 1, 1, 0.95, 0.9, 0.85, 0.8, 0.75];
+    public var NOTE_GAPS = [112, 112, 112, 112, 112, 105, 85, 80, 70, 65];
+    public var NOTE_SCALES = [1, 1, 1, 1, 1, 0.95, 0.9, 0.85, 0.8, 0.75];
 
-    var NOTE_COLORS = ["purple", "blue", "green", "red", "white", "yellow", "violet", "darkred", "dark"];
-    var DIRECTION_NAMES = ["LEFT", "DOWN", "UP", "RIGHT", "SPACE", "LEFT", "DOWN", "UP", "RIGHT"];
+    public var NOTE_COLORS = ["purple", "blue", "green", "red", "white", "yellow", "violet", "darkred", "dark"];
+    public var DIRECTION_NAMES = ["LEFT", "DOWN", "UP", "RIGHT", "SPACE", "LEFT", "DOWN", "UP", "RIGHT"];
 
-    var DIRECTIONS:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-    var NOTE_DIRECTIONS:Array<Array<Int>> = [
+    public var DIRECTIONS:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    public var NOTE_DIRECTIONS:Array<Array<Int>> = [
         [],
         [2],
         [0, 3],
@@ -21,7 +21,18 @@ class MultikeyHooks extends ScriptedModule {
         [0, 1, 2, 3, 0, 1, 2, 3],
         [0, 1, 2, 3, 2, 0, 1, 2, 3],
     ];
-    var MULTIKEY_DIRECTIONS:Array<Array<Int>> = [
+    public var NOTE_DIRECTION_NAMES:Array<Array<String>> = [
+        ["UP"],
+        ["LEFT", "RIGHT"],
+        ["LEFT", "UP", "RIGHT"],
+        ["LEFT", "DOWN", "UP", "RIGHT"],
+        ["LEFT", "DOWN", "SPACE", "UP", "RIGHT"],
+        ["LEFT-L", "DOWN", "RIGHT-L", "LEFT-R", "UP", "RIGHT-R"],
+        ["LEFT-L", "DOWN", "RIGHT-L", "SPACE", "LEFT-R", "UP", "RIGHT-R"],
+        ["LEFT-L", "DOWN-L", "UP-L", "RIGHT-L", "LEFT-R", "DOWN-R", "UP-R", "RIGHT-R"],
+        ["LEFT-L", "DOWN-L", "UP-L", "RIGHT-L", "SPACE", "LEFT-R", "DOWN-R", "UP-R", "RIGHT-R"],
+    ];
+    public var MULTIKEY_DIRECTIONS:Array<Array<Int>> = [
         [],
         [4],
         [0, 3],

@@ -1,0 +1,196 @@
+import funkin.graphics.FunkinCamera;
+import funkin.graphics.FunkinSprite;
+import funkin.graphics.shaders.HSVShader;
+import funkin.input.Device;
+import funkin.modding.base.ScriptedFlxSubState;
+import funkin.ui.AtlasText;
+import funkin.ui.ButtonStyle;
+import funkin.ui.MenuTypedList;
+import funkin.ui.NavControls;
+import funkin.ui.Prompt;
+import funkin.ui.TextMenuItem;
+import funkin.ui.TextMenuList;
+import funkin.ui.WrapMode;
+import funkin.util.InputUtil;
+
+import flixel.FlxG;
+import flixel.FlxObject;
+import flixel.util.FlxSave;
+
+class MultikeyControls extends ScriptedFlxSubState {
+    var maxKeyCount = 9;
+
+    var itemGroups = [];
+    var labels = [];
+    var headers = [];
+
+    var camFollow:FlxObject;
+    var menuCamera:FunkinCamera;
+    var controlGrid:MenuTypedList;
+    var keyUsedToEnterPrompt;
+    var canExit = true;
+    var prompt;
+    var save;
+
+    function new() {
+        super();
+
+        save = new FlxSave();
+        save.bind("MultikeyBinds", "FunkinCrew");
+
+        menuCamera = new FunkinCamera('controlsMenu');
+        FlxG.cameras.add(menuCamera, false);
+        menuCamera.bgColor = 0x0;
+        camera = menuCamera;
+
+        controlGrid = new MenuTypedList(NavControls.Columns(2), WrapMode.Vertical);
+        add(controlGrid);
+
+        var menuBG = new FunkinSprite().loadGraphic(Paths.image('menuBG'));
+        var hsv = new HSVShader(-0.6, 0.9, 3.6);
+        menuBG.shader = hsv;
+        menuBG.setGraphicSize(Std.int(menuBG.width * 1.1));
+        menuBG.updateHitbox();
+        menuBG.screenCenter();
+        menuBG.scrollFactor.set(0, 0);
+        add(menuBG);
+
+        var y = 30;
+        var spacer = 70;
+        for (i in 0...maxKeyCount) {
+            if (i != 3) {
+                var h = new AtlasText(0, y, (i + 1) + " KEY", "default");
+                h.screenCenter(0x01);
+                y += spacer;
+                add(h);
+                headers.push(h);
+
+                for (key in 0...(i + 1)) {
+                    //trace(i + "key" + key);
+                    var label = new AtlasText(0, y, (key + 1) + "", "default");
+                    add(label);
+                    labels.push(label);
+
+                    var controls = save.data.binds[i][key];
+
+                    var control1 = InputUtil.getKeyName(controls[0]);
+                    var control2 = InputUtil.getKeyName(controls[1]);
+                    if (controls[0] == 0) control1 = "---";
+                    if (controls[1] == 0) control2 = "---";
+
+                    var item = new TextMenuItem(label.x + 400, y, control1, "default", function() { selectBind(i, key, 0); });
+                    var item2 = new TextMenuItem(label.x + 400 + 300, y, control2, "default", function() { selectBind(i, key, 1); });
+                    item.fireInstantly = true;
+                    item2.fireInstantly = true;
+                    itemGroups.push(item);
+                    itemGroups.push(item2);
+                    add(item);
+                    add(item2);
+
+                    controlGrid.addItem(i + "key" + key + "0", item);
+                    controlGrid.addItem(i + "key" + key + "1", item2);
+
+                    y += spacer;
+                }
+            }
+
+        }
+
+        camFollow = new FlxObject(FlxG.width / 2, 0, 70, 70);
+        menuCamera.follow(camFollow, null, 0.06);
+
+        var margin = 100;
+        var _this = menuCamera.deadzone;
+        var X = 0;
+        var Y = margin;
+        var Width = menuCamera.width;
+        var height = menuCamera.height - margin * 2;
+        if (height == null) {
+            height = 0;
+        }
+        if (Width == null) {
+            Width = 0;
+        }
+        if (Y == null) {
+            Y = 0;
+        }
+        if (X == null) {
+            X = 0;
+        }
+        _this.x = X;
+        _this.y = Y;
+        _this.width = Width;
+        _this.height = height;
+        menuCamera.minScrollY = 0;
+
+        controlGrid.onChange.add(function(selected) {
+            camFollow.set_y(selected.y);
+            for (label in labels)
+                label.alpha = 0.6;
+
+            labels[controlGrid.selectedIndex / 2].alpha = 1.0;
+        });
+
+        prompt = new Prompt("\nPress any key to rebind\n\n\nBackspace to unbind\n    Escape to cancel", ButtonStyle.None);
+        prompt.create();
+        prompt.createBgFromMargin(100, -328339);
+        prompt.back.scrollFactor.set(0, 0);
+        prompt.exists = false;
+        add(prompt);
+    }
+
+    var selectedKC = -1;
+    var selectedNoteIndex = -1;
+    var selectedControl = -1;
+
+    function selectBind(kc, note, controlNum) {
+        selectedKC = kc;
+        selectedNoteIndex = note;
+        selectedControl = controlNum;
+        keyUsedToEnterPrompt = FlxG.keys.firstJustPressed();
+        controlGrid.enabled = false;
+        canExit = false;
+        prompt.exists = true;
+    }
+
+    override function update(elapsed:Float) {
+        if (prompt.exists) {
+            var key = FlxG.keys.firstJustReleased();
+            if (key != -1 && key != keyUsedToEnterPrompt) {
+                if (key == 27) {
+                    closePrompt();
+                } else if (key == 8) {
+                    onInputSelect(0);
+                    closePrompt();
+                } else {
+                    onInputSelect(key);
+                    closePrompt();
+                }
+            }
+        }
+        if (FlxG.keys.justPressed.ESCAPE && canExit) close();
+
+        super.update(elapsed);
+    }
+
+    function onInputSelect(input) {
+        var newControlName = InputUtil.getKeyName(input);
+        if (input == 0)
+            newControlName = "---";
+        controlGrid.members[controlGrid.selectedIndex].label.text = newControlName;
+
+        save.data.binds[selectedKC][selectedNoteIndex][selectedControl] = input;
+    }
+
+    override function destroy() {
+        super.destroy();
+        save.flush();
+        if (FlxG.cameras.list.indexOf(this.menuCamera) != -1) FlxG.cameras.remove(this.menuCamera);
+    }
+
+    function closePrompt() {
+        prompt.exists = false;
+        controlGrid.enabled = true;
+        canExit = true;
+    }
+}
