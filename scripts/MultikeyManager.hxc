@@ -19,6 +19,8 @@ import flixel.math.FlxMath;
 import Lambda;
 
 class MultikeyManager extends ScriptedModule {
+    var mkHooks:MultikeyHooks;
+
     var state:PlayState;
     var playerStrumline:Strumline;
     var inputPressQueue:Array<PreciseInputEvent> = [];
@@ -26,6 +28,7 @@ class MultikeyManager extends ScriptedModule {
 
     function new() {
         super("MultikeyManager", FlxMath.MIN_VALUE_INT);
+        mkHooks = new MultikeyHooks();
     }
 
     function onStateChange(state) {
@@ -37,7 +40,7 @@ class MultikeyManager extends ScriptedModule {
     }
 
     override function onSubStateOpenBegin(event:SubStateScriptEvent) {
-        if (!Std.isOfType(event.targetState, PlayState) && !Std.isOfType(event.targetState, PauseSubState)) state = null;
+        if (!Std.isOfType(event.targetState, PlayState) && !Std.isOfType(event.targetState, PauseSubState)) cleanup();
         onStateChange(event.targetState);
     }
 
@@ -68,8 +71,8 @@ class MultikeyManager extends ScriptedModule {
         ChartEditorThemeHandler.TOTAL_COLUMN_COUNT = ChartEditorState.STRUMLINE_SIZE * 2 + 1;
         ChartEditorState.NOTE_PREVIEW_X_POS = -(Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) + 480;
         FNFLegacyImporter.STRUMLINE_SIZE = Strumline.KEY_COUNT;
-        Strumline.STRUMLINE_SIZE = Std.int(104 * new MultikeyHooks().NOTE_SCALES[Strumline.KEY_COUNT]);
-        Strumline.NOTE_SPACING = new MultikeyHooks().NOTE_GAPS[Strumline.KEY_COUNT];
+        Strumline.STRUMLINE_SIZE = Std.int(104 * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT]);
+        Strumline.NOTE_SPACING = mkHooks.NOTE_GAPS[Strumline.KEY_COUNT];
         Strumline.DIRECTIONS = [];
         for (i in 0...Strumline.KEY_COUNT) Strumline.DIRECTIONS.push(i);
     }
@@ -128,13 +131,13 @@ class MultikeyManager extends ScriptedModule {
                 state.ghostNoteMiss(input.noteDirection, notesInRange.length > 0);
 
                 // Play the strumline animation.
-                playerStrumline.getByIndex(new MultikeyHooks().DIRECTIONS.indexOf(input.noteDirection)).playPress();
+                playerStrumline.getByIndex(mkHooks.DIRECTIONS.indexOf(input.noteDirection)).playPress();
                 trace("PENALTY Score: " + state.songScore);
             } else if (notesInDirection.length == 0) {
                 // Press a key with no penalty.
 
                 // Play the strumline animation.
-                playerStrumline.getByIndex(new MultikeyHooks().DIRECTIONS.indexOf(input.noteDirection)).playPress();
+                playerStrumline.getByIndex(mkHooks.DIRECTIONS.indexOf(input.noteDirection)).playPress();
                 trace("NO PENALTY Score: " + state.songScore);
             } else {
                 // Choose the first note, deprioritizing low priority notes.
@@ -148,7 +151,7 @@ class MultikeyManager extends ScriptedModule {
                 notesInDirection.remove(targetNote);
 
                 // Play the strumline animation.
-                playerStrumline.getByIndex(new MultikeyHooks().DIRECTIONS.indexOf(input.noteDirection)).playConfirm();
+                playerStrumline.getByIndex(mkHooks.DIRECTIONS.indexOf(input.noteDirection)).playConfirm();
             }
         }
 
@@ -156,7 +159,7 @@ class MultikeyManager extends ScriptedModule {
             var input:PreciseInputEvent = inputReleaseQueue.shift();
 
             // Play the strumline animation.
-            playerStrumline.getByIndex(new MultikeyHooks().DIRECTIONS.indexOf(input.noteDirection)).playStatic();
+            playerStrumline.getByIndex(mkHooks.DIRECTIONS.indexOf(input.noteDirection)).playStatic();
             playerStrumline.releaseKey(input.noteDirection);
         }
     }
@@ -170,7 +173,8 @@ class MultikeyManager extends ScriptedModule {
         inputManager.onInputPressed.add(onKeyPress);
         inputManager.onInputReleased.add(onKeyRelease);
 
-        initializeCustomKeyMapping(inputManager);
+        var controls = PlayerSettings.player1.controls;
+        initializeKeys(inputManager, controls);
     }
 
     /**
@@ -187,15 +191,9 @@ class MultikeyManager extends ScriptedModule {
         if (!state.isGamePaused) inputReleaseQueue.push(event);
     }
 
-    function initializeCustomKeyMapping(inputManager) {
-        var controls = PlayerSettings.player1.controls;
-
-        initializeKeys(inputManager, controls);
-    }
-
     function initializeKeys(inputManager:PreciseInputManager, controls:Controls) {
         inputManager.clearKeys();
-        for (noteDirection in new MultikeyHooks().DIRECTIONS) {
+        for (noteDirection in mkHooks.DIRECTIONS) {
             var keys = getKeysForDirection(controls, noteDirection);
             for (key in keys) {
                 var input = new FlxInput(key);
@@ -227,16 +225,22 @@ class MultikeyManager extends ScriptedModule {
 
         for (i in 4...totalKeys) {
             if (i < notesArray.length) {
-                notesArray[i].direction = new MultikeyHooks().NOTE_DIRECTIONS[totalKeys][i % new MultikeyHooks().NOTE_DIRECTIONS.length];
+                notesArray[i].direction = mkHooks.NOTE_DIRECTIONS[totalKeys][i % mkHooks.NOTE_DIRECTIONS.length];
                 trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == playerStrumline ? " (Player)" : " (Opponent)"));
             }
         }
     }
 
     // Cleanup
-    override function onSubStateCloseBegin(event:SubStateScriptEvent) { if (Std.isOfType(event.targetState, PlayState)) state = null; }
+    override function onSubStateCloseBegin(event:SubStateScriptEvent) { if (Std.isOfType(event.targetState, PlayState)) cleanup(); }
 
-    override function onSongEnd(event:ScriptEvent) { state = null; }
+    override function onSongEnd(event:ScriptEvent) { cleanup(); }
 
-    override function onDestroy(event:ScriptEvent) { state = null; }
+    override function onDestroy(event:ScriptEvent) { cleanup(); }
+
+    function cleanup() {
+        state = null;
+        PreciseInputManager.instance.onInputPressed.removeAll();
+        PreciseInputManager.instance.onInputReleased.removeAll();
+    }
 }

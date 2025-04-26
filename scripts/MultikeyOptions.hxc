@@ -2,6 +2,7 @@ import funkin.modding.base.ScriptedMusicBeatSubState;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.ui.options.OptionsState;
+
 import flixel.FlxG;
 
 class MultikeyOptions extends ScriptedModule {
