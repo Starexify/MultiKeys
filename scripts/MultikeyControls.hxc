@@ -86,16 +86,14 @@ class MultikeyControls extends ScriptedFlxSubState {
 
                     var controls = multikeysOptions.controls[i][key];
                     var controlsArray = [InputUtil.getKeyName(controls[0]), InputUtil.getKeyName(controls[1])];
-                    for (index in 0...controlsArray.length) {
-                        if (controls[index] == 0) controlsArray[index] = "---";
-                    }
+                    for (index in 0...controlsArray.length) if (controls[index] == 0) controlsArray[index] = "---";
 
                     for (column in 0...2) {
                         var item = new TextMenuItem(label.x + CONTROL_MARGIN_X + column * CONTROL_SPACING_X, y, controlsArray[column], "default", () -> selectBind(i, key, column));
                         item.fireInstantly = true;
                         itemGroups.push(item);
                         add(item);
-                        controlGrid.addItem(i + "key" + key + column, item);
+                        controlGrid.addItem(item.name, item);
                     }
 
                     y += spacer;
@@ -105,24 +103,11 @@ class MultikeyControls extends ScriptedFlxSubState {
         }
 
         camFollow = new FlxObject(FlxG.width / 2, 0, 70, 70);
+
         menuCamera.follow(camFollow, null, 0.06);
-
         var margin = 100;
-        var _this = menuCamera.deadzone;
-        var x = 0;
-        var y = margin;
-        var width = menuCamera.width;
-        var height = menuCamera.height - margin * 2;
-        if (height == null) height = 0;
-        if (width == null) width = 0;
-        if (y == null) y = 0;
-        if (x == null) x = 0;
-        _this.x = x;
-        _this.y = y;
-        _this.width = width;
-        _this.height = height;
+        menuCamera.deadzone.set(0, margin, menuCamera.width, menuCamera.height - margin * 2);
         menuCamera.minScrollY = 0;
-
         controlGrid.onChange.add(selected -> {
             camFollow.y = selected.y;
             for (label in labels) label.alpha = 0.6;

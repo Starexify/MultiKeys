@@ -1,0 +1,32 @@
+import funkin.modding.module.ScriptedModule;
+import funkin.modding.events.ScriptEvent;
+import funkin.play.notes.Strumline;
+import funkin.ui.debug.charting.ChartEditorState;
+
+class MultikeyCompat extends ScriptedModule {
+
+    function new() {
+        super("MultikeyCompat");
+    }
+
+    override function onStateChangeEnd(event:StateChangeScriptEvent) {
+        if (Std.isOfType(event.targetState, ChartEditorState)) {
+            var state:ChartEditorState = event.targetState;
+
+            for (waveform in state.audioWaveforms) {
+                if (waveform.x == 840) {
+                    var offset = (Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) - 160;
+                    waveform.x += offset;
+                }
+                else if (waveform.x == 360) {
+                    var offset = -(Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) + 160;
+                    waveform.x += offset;
+                }
+            }
+            state.buttonSelectOpponent.width = ChartEditorState.GRID_SIZE * Strumline.KEY_COUNT;
+            state.buttonSelectPlayer.width = ChartEditorState.GRID_SIZE * Strumline.KEY_COUNT;
+            state.buttonSelectPlayer.x = state.buttonSelectOpponent.x + state.buttonSelectOpponent.width;
+            state.buttonSelectEvent.x = state.buttonSelectPlayer.x + state.buttonSelectPlayer.width;
+        }
+    }
+}
