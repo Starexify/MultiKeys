@@ -1,8 +1,8 @@
 import funkin.graphics.FunkinCamera;
 import funkin.graphics.FunkinSprite;
 import funkin.graphics.shaders.HSVShader;
-import funkin.input.Device;
 import funkin.modding.base.ScriptedFlxSubState;
+import funkin.save.Save;
 import funkin.ui.AtlasText;
 import funkin.ui.ButtonStyle;
 import funkin.ui.MenuTypedList;
@@ -11,14 +11,15 @@ import funkin.ui.Prompt;
 import funkin.ui.TextMenuItem;
 import funkin.ui.TextMenuList;
 import funkin.ui.WrapMode;
+import funkin.ui.options.OptionsState;
 import funkin.util.InputUtil;
 
 import flixel.FlxG;
 import flixel.FlxObject;
-import flixel.util.FlxSave;
 
 class MultikeyControls extends ScriptedFlxSubState {
-    var maxKeyCount = 9;
+    var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
+    var mkHooks:MultikeyHooks;
 
     var itemGroups = [];
     var labels = [];
@@ -30,13 +31,20 @@ class MultikeyControls extends ScriptedFlxSubState {
     var keyUsedToEnterPrompt;
     var canExit = true;
     var prompt;
-    var save;
+
+    var CONTROL_BASE_X = 50;
+    var CONTROL_MARGIN_X = 700;
+    var CONTROL_SPACING_X = 300;
+
+    var prevPersistentUpdate:Bool;
 
     function new() {
         super();
 
-        save = new FlxSave();
-        save.bind("MultikeyBinds", "FunkinCrew");
+        prevPersistentUpdate = FlxG.state.persistentUpdate;
+        FlxG.state.persistentUpdate = false;
+
+        mkHooks = new MultikeyHooks();
 
         menuCamera = new FunkinCamera('controlsMenu');
         FlxG.cameras.add(menuCamera, false);
@@ -55,40 +63,40 @@ class MultikeyControls extends ScriptedFlxSubState {
         menuBG.scrollFactor.set(0, 0);
         add(menuBG);
 
+
         var y = 30;
         var spacer = 70;
-        for (i in 0...maxKeyCount) {
+
+        var notesHeader = new AtlasText(0, y, "NOTES", "bold").screenCenter(0x01);
+        add(notesHeader);
+        y += spacer;
+
+        for (i in 0...mkHooks.DIRECTIONS.length) {
             if (i != 3) {
-                var h = new AtlasText(0, y, (i + 1) + " KEY", "default");
-                h.screenCenter(0x01);
+                var header = new AtlasText(0, y, (i + 1) + " KEY", "default").screenCenter(0x01);
                 y += spacer;
-                add(h);
-                headers.push(h);
+                add(header);
+                headers.push(header);
 
                 for (key in 0...(i + 1)) {
                     //trace(i + "key" + key);
-                    var label = new AtlasText(0, y, (key + 1) + "", "default");
+                    var label = new AtlasText(CONTROL_BASE_X, y, mkHooks.NOTE_DIRECTION_NAMES[i][key], "bold");
                     add(label);
                     labels.push(label);
 
-                    var controls = save.data.binds[i][key];
+                    var controls = multikeysOptions.controls[i][key];
+                    var controlsArray = [InputUtil.getKeyName(controls[0]), InputUtil.getKeyName(controls[1])];
+                    for (index in 0...controlsArray.length) {
+                        if (controls[index] == 0) controlsArray[index] = "---";
+                    }
 
-                    var control1 = InputUtil.getKeyName(controls[0]);
-                    var control2 = InputUtil.getKeyName(controls[1]);
-                    if (controls[0] == 0) control1 = "---";
-                    if (controls[1] == 0) control2 = "---";
-
-                    var item = new TextMenuItem(label.x + 400, y, control1, "default", function() { selectBind(i, key, 0); });
-                    var item2 = new TextMenuItem(label.x + 400 + 300, y, control2, "default", function() { selectBind(i, key, 1); });
-                    item.fireInstantly = true;
-                    item2.fireInstantly = true;
-                    itemGroups.push(item);
-                    itemGroups.push(item2);
-                    add(item);
-                    add(item2);
-
-                    controlGrid.addItem(i + "key" + key + "0", item);
-                    controlGrid.addItem(i + "key" + key + "1", item2);
+                    for (column in 0...2) {
+                        var item = new TextMenuItem(label.x + CONTROL_MARGIN_X + column * CONTROL_SPACING_X, y, controlsArray[column], "default", () -> selectBind(i, key, column));
+                        item.fireInstantly = true;
+                        itemGroups.push(item);
+                        add(item);
+                        controlGrid.addItem(i + "key" + key + column, item);
+                    }
 
                     y += spacer;
                 }
@@ -101,33 +109,23 @@ class MultikeyControls extends ScriptedFlxSubState {
 
         var margin = 100;
         var _this = menuCamera.deadzone;
-        var X = 0;
-        var Y = margin;
-        var Width = menuCamera.width;
+        var x = 0;
+        var y = margin;
+        var width = menuCamera.width;
         var height = menuCamera.height - margin * 2;
-        if (height == null) {
-            height = 0;
-        }
-        if (Width == null) {
-            Width = 0;
-        }
-        if (Y == null) {
-            Y = 0;
-        }
-        if (X == null) {
-            X = 0;
-        }
-        _this.x = X;
-        _this.y = Y;
-        _this.width = Width;
+        if (height == null) height = 0;
+        if (width == null) width = 0;
+        if (y == null) y = 0;
+        if (x == null) x = 0;
+        _this.x = x;
+        _this.y = y;
+        _this.width = width;
         _this.height = height;
         menuCamera.minScrollY = 0;
 
-        controlGrid.onChange.add(function(selected) {
-            camFollow.set_y(selected.y);
-            for (label in labels)
-                label.alpha = 0.6;
-
+        controlGrid.onChange.add(selected -> {
+            camFollow.y = selected.y;
+            for (label in labels) label.alpha = 0.6;
             labels[controlGrid.selectedIndex / 2].alpha = 1.0;
         });
 
@@ -137,20 +135,6 @@ class MultikeyControls extends ScriptedFlxSubState {
         prompt.back.scrollFactor.set(0, 0);
         prompt.exists = false;
         add(prompt);
-    }
-
-    var selectedKC = -1;
-    var selectedNoteIndex = -1;
-    var selectedControl = -1;
-
-    function selectBind(kc, note, controlNum) {
-        selectedKC = kc;
-        selectedNoteIndex = note;
-        selectedControl = controlNum;
-        keyUsedToEnterPrompt = FlxG.keys.firstJustPressed();
-        controlGrid.enabled = false;
-        canExit = false;
-        prompt.exists = true;
     }
 
     override function update(elapsed:Float) {
@@ -168,7 +152,8 @@ class MultikeyControls extends ScriptedFlxSubState {
                 }
             }
         }
-        if (FlxG.keys.justPressed.ESCAPE && canExit) close();
+
+        if (FlxG.keys.justPressed.ESCAPE && canExit) FlxG.switchState(() -> new OptionsState());
 
         super.update(elapsed);
     }
@@ -179,13 +164,38 @@ class MultikeyControls extends ScriptedFlxSubState {
             newControlName = "---";
         controlGrid.members[controlGrid.selectedIndex].label.text = newControlName;
 
-        save.data.binds[selectedKC][selectedNoteIndex][selectedControl] = input;
+        multikeysOptions.controls[selectedKC][selectedNoteIndex][selectedControl] = input;
+    }
+
+    var selectedKC = -1;
+    var selectedNoteIndex = -1;
+    var selectedControl = -1;
+
+    function selectBind(kc, note, controlNum) {
+        selectedKC = kc;
+        selectedNoteIndex = note;
+        selectedControl = controlNum;
+        keyUsedToEnterPrompt = FlxG.keys.firstJustPressed();
+        controlGrid.enabled = false;
+        canExit = false;
+        prompt.exists = true;
+    }
+
+    // Cleanup
+    override function close() {
+        cleanup();
+        super.close();
     }
 
     override function destroy() {
+        cleanup();
         super.destroy();
-        save.flush();
+    }
+
+
+    function cleanup() {
         if (FlxG.cameras.list.indexOf(this.menuCamera) != -1) FlxG.cameras.remove(this.menuCamera);
+        FlxG.state.persistentUpdate = prevPersistentUpdate;
     }
 
     function closePrompt() {

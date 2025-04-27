@@ -1,194 +1,58 @@
-import funkin.input.Control;
+import funkin.modding.base.ScriptedFlxSubState;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.save.Save;
-import funkin.ui.AtlasText;
-import funkin.ui.options.ControlsMenu;
-import funkin.ui.options.InputItem;
 import funkin.ui.options.OptionsState;
 
-import flixel.util.FlxSave;
-import funkin.util.InputUtil;
-import funkin.ui.TextMenuItem;
-import funkin.util.ReflectUtil;
+import flixel.FlxG;
 
 class MultikeyOptions extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
 
-    var mkHooks:MultikeyHooks;
-
     var DEFAULT_KEYBINDS:MultikeySaveData = {
-        oneK: [[32, 0]],
-        twoK: [[68, 0], [75, 0]],
-        threeK: [[68, 0], [32, 0], [75, 0]],
-        fourK: [[68, 0], [70, 0], [74, 0], [75, 0]],
-        fiveK: [[68, 0], [70, 0], [32, 0], [74, 0], [75, 0]],
-        sixK: [[83, 0], [68, 0], [70, 0], [74, 0], [75, 0], [76, 0]],
-        sevenK: [[83, 0], [68, 0], [70, 0], [32, 0], [74, 0], [75, 0], [76, 0]],
-        eightK: [[65, 0], [83, 0], [68, 0], [70, 0], [72, 0], [74, 0], [75, 0], [76, 0]],
-        nineK: [[65, 0], [83, 0], [68, 0], [70, 0], [32, 0], [72, 0], [74, 0], [75, 0], [76, 0]]
+        controls: [
+            [[32, 0]],
+            [[68, 0], [75, 0]],
+            [[68, 0], [32, 0], [75, 0]],
+            [[68, 0], [70, 0], [74, 0], [75, 0]],
+            [[68, 0], [70, 0], [32, 0], [74, 0], [75, 0]],
+            [[83, 0], [68, 0], [70, 0], [74, 0], [75, 0], [76, 0]],
+            [[83, 0], [68, 0], [70, 0], [32, 0], [74, 0], [75, 0], [76, 0]],
+            [[65, 0], [83, 0], [68, 0], [70, 0], [72, 0], [74, 0], [75, 0], [76, 0]],
+            [[65, 0], [83, 0], [68, 0], [70, 0], [32, 0], [72, 0], [74, 0], [75, 0], [76, 0]],
+        ]
     };
-
-    var defaultBinds = [
-        [[32, 0]],
-        [[68, 0], [75, 0]],
-        [[68, 0], [32, 0], [75, 0]],
-        [[68, 0], [70, 0], [74, 0], [75, 0]],
-        [[68, 0], [70, 0], [32, 0], [74, 0], [75, 0]],
-        [[83, 0], [68, 0], [70, 0], [74, 0], [75, 0], [76, 0]],
-        [[83, 0], [68, 0], [70, 0], [32, 0], [74, 0], [75, 0], [76, 0]],
-        [[65, 0], [83, 0], [68, 0], [70, 0], [72, 0], [74, 0], [75, 0], [76, 0]],
-        [[65, 0], [83, 0], [68, 0], [70, 0], [32, 0], [72, 0], [74, 0], [75, 0], [76, 0]],
-    ];
-
-    var save;
 
     function new() {
         super("MultikeyOptions", 999);
-        mkHooks = new MultikeyHooks();
-/*        if (!Save.instance.modOptions.exists("multikeys")) Save.instance.modOptions.set("multikeys", DEFAULT_KEYBINDS);
-        else {
-            for (field in ReflectUtil.getAnonymousFieldsOf(DEFAULT_KEYBINDS)) {
-                if (!ReflectUtil.hasAnonymousField(multikeysOptions, field)) ReflectUtil.setAnonymousField(multikeysOptions, field, ReflectUtil.getAnonymousField(DEFAULT_KEYBINDS, field));
-            }
-        }
-        Save.instance.flush();*/
-
-        save = new FlxSave();
-        save.bind("MultikeyBinds", "FunkinCrew");
-        if (save.data.binds == null) save.data.binds = defaultBinds.copy();
-        save.flush();
+        if (!Save.instance.modOptions.exists("multikeys")) Save.instance.modOptions.set("multikeys", DEFAULT_KEYBINDS);
+        Save.instance.flush();
     }
 
     override function onStateChangeEnd(event:StateChangeScriptEvent) {
         if (Std.isOfType(event.targetState, OptionsState)) {
             // MultiKeys Controls Entry
-            var controlsMenu:ControlsMenu = event.targetState.optionsCodex.pages.get("controls");
-            if (controlsMenu != null) {
-                // remove
-                var labelsToRemove = [];
-                var controlsToRemove = [];
-                var labelCount = 0;
-                for (label in controlsMenu.labels) labelCount++;
-
-                var controlCount = 0;
-                for (control in controlsMenu.controlGrid) controlCount++;
-
-                for (i in 0...4)
-                    if (i < labelCount) labelsToRemove.push(controlsMenu.labels.members[i]);
-
-                for (i in 0...8)
-                    if (i < controlCount) controlsToRemove.push(controlsMenu.controlGrid.members[i]);
-
-                var labelsToAddBack = [];
-                var controlsToAddBack = [];
-
-                for (i in 0...labelCount) {
-                    var idx = labelCount - 1 - i;
-                    if (idx >= 4) {
-                        var label = controlsMenu.labels.members[idx];
-                        labelsToAddBack.push(label);
-                        controlsMenu.labels.remove(label);
-                    }
-                }
-
-                for (i in 0...controlCount) {
-                    var idx = controlCount - 1 - i;
-                    if (idx >= 8) {
-                        var control = controlsMenu.controlGrid.members[idx];
-                        controlsToAddBack.push(control);
-                        controlsMenu.controlGrid.remove(control);
-                    }
-                }
-
-                var y = 100;
-                var spacer = 70;
-                var newLabelsCount = 0;
-                var headerY;
-                for (i in 0...9) {
-                    headerY = y + (newLabelsCount - 1) * spacer + 70;
-                    var header = new AtlasText(0, headerY, (i + 1) + " KEY", "default");
-                    header.screenCenter(0x01);
-                    y += spacer;
-                    controlsMenu.add(header);
-                    header.zIndex = 0;
-
-                    if (i != 3) {
-                        if (i == 0) {
-                            for (label in labelsToRemove) {
-                                controlsMenu.labels.remove(label);
-                            }
-                            for (control in controlsToRemove) {
-                                controlsMenu.controlGrid.remove(control);
-                            }
-                        }
-
-                        for (key in 0...(i + 1)) {
-                            var labelY = y + (newLabelsCount * spacer);
-                            var label = controlsMenu.labels.add(new AtlasText(ControlsMenu.CONTROL_BASE_X, labelY, mkHooks.NOTE_DIRECTION_NAMES[i][key], "bold"));
-                            label.alpha = 0.6;
-                            newLabelsCount++;
-
-                            var controls = save.data.binds[i][key];
-
-
-                            var control1 = InputUtil.getKeyName(controls[0]);
-                            var control2 = InputUtil.getKeyName(controls[1]);
-                            if (controls[0] == 0) control1 = "---";
-                            if (controls[1] == 0) control2 = "---";
-
-                            for (column in 0...2) {
-                                controlsMenu.createItem(label.x + ControlsMenu.CONTROL_MARGIN_X + column * ControlsMenu.CONTROL_SPACING_X, labelY, Controls., column);
-                            }
-                        }
-                    } else {
-                        for (label in labelsToRemove) {
-                            label.y += spacer * (newLabelsCount + 4);
-                            controlsMenu.labels.add(label);
-                        }
-
-                        for (control in controlsToRemove) {
-                            control.y += spacer * (newLabelsCount + 4);
-                            controlsMenu.controlGrid.add(control);
-                        }
-
-                        y += 260;
-                    }
-                }
-
-                var j = 0;
-                for (members in controlsMenu.members[1]) {
-                    if (j > 0)
-                        for (member in members)
-                            if (member.y != null) member.y += spacer * (newLabelsCount + 9);
-                    j++;
-                }
-
-                labelsToAddBack.reverse();
-                controlsToAddBack.reverse();
-                var yOffset = spacer * (newLabelsCount + 9);
-                for (label in labelsToAddBack) {
-                    controlsMenu.labels.add(label);
-                    label.y += yOffset;
-                }
-                for (control in controlsToAddBack) {
-                    controlsMenu.controlGrid.add(control);
-                    control.y += yOffset;
-                }
-            }
+            var options:OptionsMenu = event.targetState.optionsCodex.get_currentPage();
+            for (optionEntries in options.items.members) optionEntries.y -= 80;
+            var lastItems = [
+                options.items.members[options.items.length - 4], // input offset
+                options.items.members[options.items.length - 3], // ngLogin
+                options.items.members[options.items.length - 2], // clearSave
+                options.items.members[options.items.length - 1] // exit
+            ];
+            lastItems[0].y += 100; // input offset
+            lastItems[1].y += 100; // ngLogin
+            lastItems[2].y += 100; // clearSave
+            lastItems[3].y += 110; // exit
+            for (item in lastItems) options.items.remove(item);
+            var mkControls = options.items.createItem(0, (options.items.length - 4) * 100 + 20, "Multikey Controls", "bold", () -> FlxG.state.openSubState(ScriptedFlxSubState.init("MultikeyControls")));
+            mkControls.x = (FlxG.width - mkControls.width) / 2;
+            for (item in lastItems) options.items.add(item);
         }
     }
 
 }
 
 typedef MultikeySaveData = {
-    oneK:Array<Array<Int>>,
-    twoK:Array<Array<Int>>,
-    threeK:Array<Array<Int>>,
-    fourK:Array<Array<Int>>,
-    fiveK:Array<Array<Int>>,
-    sixK:Array<Array<Int>>,
-    sevenK:Array<Array<Int>>,
-    eightK:Array<Array<Int>>,
-    nineK:Array<Array<Int>>,
+    controls:Array<Array<Array<Int>>>
 }

@@ -2,6 +2,7 @@ import funkin.PlayerSettings;
 import funkin.data.song.importer.FNFLegacyImporter;
 import funkin.input.Control;
 import funkin.input.Controls;
+import funkin.input.FunkinAction;
 import funkin.input.PreciseInputManager;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
@@ -9,16 +10,20 @@ import funkin.play.PauseSubState;
 import funkin.play.PlayState;
 import funkin.play.notes.NoteSprite;
 import funkin.play.notes.Strumline;
+import funkin.save.Save;
 import funkin.ui.debug.charting.ChartEditorState;
 import funkin.ui.debug.charting.handlers.ChartEditorThemeHandler;
+import funkin.util.tools.StringTools;
 
 import flixel.FlxG;
 import flixel.input.FlxInput;
+import flixel.input.actions.FlxInputDevice;
 import flixel.math.FlxMath;
 
 import Lambda;
 
 class MultikeyManager extends ScriptedModule {
+    var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
     var mkHooks:MultikeyHooks;
 
     var state:PlayState;
@@ -177,6 +182,35 @@ class MultikeyManager extends ScriptedModule {
         initializeKeys(inputManager, controls);
     }
 
+    function initializeKeys(inputManager:PreciseInputManager, controls:Controls) {
+        inputManager.clearKeys();
+        for (noteDirection in mkHooks.DIRECTIONS) {
+            var keys = multikeysOptions.controls[Strumline.KEY_COUNT - 1];
+            for (keyList in keys) {
+                var keyName = "multikey_" + StringTools.toLowerKebabCase(mkHooks.NOTE_DIRECTION_NAMES[Strumline.KEY_COUNT - 1][noteDirection]);
+                var action = new FunkinAction(keyName, keyName + "_JP", keyName + "_JR");
+                controls.add(action);
+
+                for (key in keyList) {
+                    action.addKey(key, -1);
+                    action.addKey(key, 2);
+                }
+
+                for (input in action.inputs) {
+                    if (input.device == FlxInputDevice.KEYBOARD) {
+                        var key = input.inputID;
+                        var flxInput = new FlxInput(key);
+                        inputManager._keyList.push(key);
+                        inputManager._keyListArray.push(flxInput);
+                        inputManager._keyListMap.set(key, flxInput);
+                        inputManager._keyListDir.set(key, noteDirection);
+                    }
+                }
+                controls.add(action);
+            }
+        }
+    }
+
     /**
      * Callback executed when one of the note keys is pressed.
      */
@@ -189,34 +223,6 @@ class MultikeyManager extends ScriptedModule {
      */
     function onKeyRelease(event:PreciseInputEvent) {
         if (!state.isGamePaused) inputReleaseQueue.push(event);
-    }
-
-    function initializeKeys(inputManager:PreciseInputManager, controls:Controls) {
-        inputManager.clearKeys();
-        for (noteDirection in mkHooks.DIRECTIONS) {
-            var keys = getKeysForDirection(controls, noteDirection);
-            for (key in keys) {
-                var input = new FlxInput(key);
-                inputManager._keyList.push(key);
-                inputManager._keyListArray.push(input);
-                inputManager._keyListMap.set(key, input);
-                inputManager._keyListDir.set(key, noteDirection);
-            }
-        }
-    }
-
-    function getKeysForDirection(controls:Controls, noteDirection:Int) {
-        return switch (noteDirection) {
-            case 0: controls.getKeysForAction("note_left");
-            case 1: controls.getKeysForAction("note_down");
-            case 2: controls.getKeysForAction("note_right");
-            case 3: controls.getKeysForAction("freeplay_favorite");
-            case 4: controls.getKeysForAction("debug_menu");
-            case 5: controls.getKeysForAction("note_up");
-            case 6: controls.getKeysForAction("freeplay_left");
-            case 7: controls.getKeysForAction("freeplay_left");
-            case 8: controls.getKeysForAction("freeplay_left");
-        };
     }
 
     // Helper Methods
