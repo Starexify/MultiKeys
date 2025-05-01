@@ -1,23 +1,22 @@
-import funkin.modding.base.ScriptedFlxSubState;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.save.Save;
+import funkin.ui.AtlasText;
+import funkin.ui.ButtonStyle;
+import funkin.ui.Prompt;
+import funkin.ui.TextMenuItem;
+import funkin.ui.options.ControlsMenu;
 import funkin.ui.options.OptionsState;
+import funkin.util.InputUtil;
 
 import flixel.FlxG;
-import funkin.ui.options.ControlsMenu;
-import funkin.ui.options.InputItem;
-import funkin.input.FunkinAction;
-import funkin.util.tools.StringTools;
-import funkin.input.Control;
-import funkin.ui.TextMenuItem;
-import funkin.ui.AtlasText;
-import funkin.util.InputUtil;
-import funkin.ui.TextMenuList.TextMenuItem;
 
 class MultikeyOptions extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
     var mkHooks:MultikeyHooks;
+
+    var controlsMenu:ControlsMenu;
+    var prompt:Prompt;
 
     var DEFAULT_KEYBINDS:MultikeySaveData = {
         controls: [
@@ -35,17 +34,22 @@ class MultikeyOptions extends ScriptedModule {
 
     function new() {
         super("MultikeyOptions", 999);
+        mkHooks = new MultikeyHooks();
         if (!Save.instance.modOptions.exists("multikeys")) Save.instance.modOptions.set("multikeys", DEFAULT_KEYBINDS);
         Save.instance.flush();
-        mkHooks = new MultikeyHooks();
     }
 
     override function onStateChangeEnd(event:StateChangeScriptEvent) {
         if (Std.isOfType(event.targetState, OptionsState)) {
-            // MultiKeys Controls Entry
-            var controlsMenu:ControlsMenu = event.targetState.optionsCodex.pages.get("controls");
+            // Add Multikey Controls in Controls
+            controlsMenu = event.targetState.optionsCodex.pages.get("controls");
             if (controlsMenu != null) {
-                // remove
+                prompt = new Prompt("\nPress any key to rebind\n\n\nBackspace to unbind\n    Escape to cancel", ButtonStyle.None);
+                prompt.create();
+                prompt.createBgFromMargin(100, -328339);
+                prompt.back.scrollFactor.set(0, 0);
+                prompt.exists = false;
+
                 var labelsToRemove = [];
                 var controlsToRemove = [];
                 var labelCount = 0;
@@ -113,10 +117,11 @@ class MultikeyOptions extends ScriptedModule {
                             for (index in 0...controlsArray.length) if (controls[index] == 0) controlsArray[index] = "---";
 
                             for (column in 0...2) {
-                                var item = new TextMenuItem(label.x + ControlsMenu.CONTROL_MARGIN_X + column * ControlsMenu.CONTROL_SPACING_X, labelY, controlsArray[column],"default",
+                                var item = new TextMenuItem(label.x + ControlsMenu.CONTROL_MARGIN_X + column * ControlsMenu.CONTROL_SPACING_X, labelY, controlsArray[column], "default",
                                 () -> selectBind(controlsMenu, i, key, column));
-
-                                return controlsMenu.controlGrid.addItem(item.name, item);
+                                item.fireInstantly = true;
+                                controlsMenu.itemGroups[column].push(item);
+                                controlsMenu.controlGrid.addItem(item.name, item);
                             }
                         }
                     } else {
@@ -153,24 +158,34 @@ class MultikeyOptions extends ScriptedModule {
                     controlsMenu.controlGrid.add(control);
                     control.y += yOffset;
                 }
-            }
 
-            var options:OptionsMenu = event.targetState.optionsCodex.get_currentPage();
-            for (optionEntries in options.items.members) optionEntries.y -= 80;
-            var lastItems = [
-                options.items.members[options.items.length - 4], // input offset
-                options.items.members[options.items.length - 3], // ngLogin
-                options.items.members[options.items.length - 2], // clearSave
-                options.items.members[options.items.length - 1] // exit
-            ];
-            lastItems[0].y += 100; // input offset
-            lastItems[1].y += 100; // ngLogin
-            lastItems[2].y += 100; // clearSave
-            lastItems[3].y += 110; // exit
-            for (item in lastItems) options.items.remove(item);
-            var mkControls = options.items.createItem(0, (options.items.length - 4) * 100 + 20, "Multikey Controls", "bold", () -> FlxG.state.openSubState(ScriptedFlxSubState.init("MultikeyControls")));
-            mkControls.x = (FlxG.width - mkControls.width) / 2;
-            for (item in lastItems) options.items.add(item);
+                controlsMenu.controlGrid.onChange.removeAll();
+                controlsMenu.controlGrid.onChange.add(selected -> {
+                    controlsMenu.camFollow.y = selected.y;
+                    controlsMenu.labels.forEach((label) -> label.alpha = 0.6);
+                    controlsMenu.labels.members[Std.int(controlsMenu.controlGrid.selectedIndex / 2)].alpha = 1.0;
+                });
+
+                controlsMenu.add(prompt);
+            }
+        }
+    }
+
+    override function onUpdate(event:UpdateScriptEvent) {
+        if (controlsMenu == null) return;
+        if (prompt.exists) {
+            var key:Int = FlxG.keys.firstJustReleased();
+            if (key != -1 && key != keyUsedToEnterPrompt) {
+                if (key == 27) {
+                    closePrompt();
+                } else if (key == 8) {
+                    onInputSelect(0);
+                    closePrompt();
+                } else {
+                    onInputSelect(key);
+                    closePrompt();
+                }
+            }
         }
     }
 
@@ -186,9 +201,22 @@ class MultikeyOptions extends ScriptedModule {
         keyUsedToEnterPrompt = FlxG.keys.firstJustPressed();
         controlsMenu.controlGrid.enabled = false;
         controlsMenu.canExit = false;
-        controlsMenu.prompt.exists = true;
+        prompt.exists = true;
     }
 
+    function onInputSelect(input:Int) {
+        var newControlName = InputUtil.getKeyName(input);
+        if (input == 0) newControlName = "---";
+        controlsMenu.controlGrid.members[controlsMenu.controlGrid.selectedIndex].label.text = newControlName;
+
+        multikeysOptions.controls[selectedKC][selectedNoteIndex][selectedControl] = input;
+    }
+
+    function closePrompt() {
+        prompt.exists = false;
+        controlsMenu.controlGrid.enabled = true;
+        controlsMenu.canExit = true;
+    }
 }
 
 typedef MultikeySaveData = {
