@@ -24,7 +24,7 @@ class NoteSpawnFix extends ScriptedModule {
     }
 
     override function onNoteIncoming(event:NoteScriptEvent) {
-        if (Strumline.KEY_COUNT == 4) return;
+        if (state == null || Strumline.KEY_COUNT == 4) return;
 
         event.note.direction = event.note.noteData.data % Strumline.KEY_COUNT;
         event.note.animation.play(mkHooks.NOTE_COLORS[mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.direction]] + "Scroll");

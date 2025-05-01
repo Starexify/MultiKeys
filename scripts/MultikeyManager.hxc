@@ -12,15 +12,16 @@ import funkin.play.notes.Strumline;
 import funkin.save.Save;
 import funkin.ui.debug.charting.ChartEditorState;
 import funkin.ui.debug.charting.handlers.ChartEditorThemeHandler;
+import funkin.util.Constants;
 import funkin.util.tools.StringTools;
-import flixel.input.actions.FlxAction;
+
 import flixel.FlxG;
+import flixel.input.actions.FlxAction;
+import flixel.input.actions.FlxActionDigital;
 import flixel.input.actions.FlxInputDevice;
 import flixel.math.FlxMath;
 
 import Lambda;
-import flixel.input.actions.FlxActionDigital;
-import funkin.util.Constants;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
@@ -75,11 +76,8 @@ class MultikeyManager extends ScriptedModule {
         processExtraNotes(state.opponentStrumline, totalKeys);
     }
 
-    override function onSongStart(event:ScriptEvent) {
-    }
-
     override function onCountdownStart(event:CountdownScriptEvent) {
-        if (Strumline.KEY_COUNT != 4) initPreciseInputs();
+        if (state != null && Strumline.KEY_COUNT != 4) initPreciseInputs();
     }
 
     override function onUpdate(event:UpdateScriptEvent) {
@@ -89,7 +87,6 @@ class MultikeyManager extends ScriptedModule {
         for (i in 0...justPressedActions.length) {
             // Get timestamp only once per frame
             var ts = PreciseInputManager.getCurrentTimestamp();
-
             if (justPressedActions[i].check()) onKeyPress({noteDirection: i, timestamp: ts});
             if (justReleasedActions[i].check()) onKeyRelease({noteDirection: i, timestamp: ts});
         }
@@ -108,50 +105,34 @@ class MultikeyManager extends ScriptedModule {
 
         var notesInRange:Array<NoteSprite> = state.playerStrumline.getNotesMayHit();
         var holdNotesInRange = PlayState.instance.playerStrumline.getHoldNotesHitOrMissed();
-        var notesByDirection:Array<Array<NoteSprite>> = [];
 
-        // Initialize note arrays for each direction
-        for (i in 0...Strumline.KEY_COUNT) notesByDirection.push([]);
-
-        // Group notes by direction
+        var notesByDirection:Array<Array<NoteSprite>> = [for (i in 0...Strumline.KEY_COUNT) []];
         for (note in notesInRange) notesByDirection[note.direction].push(note);
 
         // Process press queue
         while (inputPressQueue.length > 0) {
             var input:PreciseInputEvent = inputPressQueue.shift();
-
             state.playerStrumline.pressKey(input.noteDirection);
 
             // Don't credit or penalize inputs in Bot Play.
             if (state.isBotPlayMode) continue;
 
             var notesInDirection:Array<NoteSprite> = notesByDirection[input.noteDirection];
-            var directionIndex = input.noteDirection;
 
             if (!Constants.GHOST_TAPPING && notesInDirection.length == 0) {
-                // Always penalty when no ghost tapping
                 state.ghostNoteMiss(input.noteDirection, notesInRange.length > 0);
-                state.playerStrumline.playPress(directionIndex);
-                trace("PENALTY Score: " + state.songScore);
+                state.playerStrumline.playPress(input.noteDirection);
             } else if (Constants.GHOST_TAPPING && holdNotesInRange.length + notesInRange.length > 0 && notesInDirection.length == 0) {
                 state.ghostNoteMiss(input.noteDirection, notesInRange.length > 0);
-                state.playerStrumline.playPress(directionIndex);
-                trace("PENALTY Score: " + state.songScore);
+                state.playerStrumline.playPress(input.noteDirection);
             } else if (notesInDirection.length > 0) {
-                // Choose the first note, deprioritizing low priority notes.
-                var targetNote:Null<NoteSprite> = Lambda.find(notesInDirection, note -> !note.lowPriority);
+                var targetNote = Lambda.find(notesInDirection, note -> !note.lowPriority);
                 if (targetNote == null) targetNote = notesInDirection[0];
                 if (targetNote == null) continue;
 
-                // Judge and hit the note
                 state.goodNoteHit(targetNote, input);
-
-                // Remove the hit note from available notes
                 notesInDirection.remove(targetNote);
-                notesByDirection[input.noteDirection] = notesInDirection;
-
-                // Play the confirm animation
-                state.playerStrumline.playConfirm(directionIndex);
+                state.playerStrumline.playConfirm(input.noteDirection);
             } else {
                 state.playerStrumline.playPress(input.noteDirection);
             }
@@ -190,17 +171,18 @@ class MultikeyManager extends ScriptedModule {
         var i = 0;
         for (keyList in keySets) {
             var keyName = "multikey_" + StringTools.toLowerKebabCase(mkHooks.NOTE_DIRECTION_NAMES[Strumline.KEY_COUNT][i]);
-            var action = new FunkinAction(keyName);
-
-            var actionJP = action.addKey(keyList[0], 2);
-            justPressedActions.push(actionJP);
-            var actionJR = action.addKey(keyList[0], -1);
-            justReleasedActions.push(actionJR);
+            var pressAction = new FlxActionDigital(keyName + "-press");
+            //var pressAction = new FunkinAction(keyName + "-press");
+            justPressedActions.push(pressAction);
+            var releaseAction = new FlxActionDigital(keyName + "-release");
+            //var releaseAction = new FunkinAction(keyName + "-release");
+            justReleasedActions.push(releaseAction);
 
             for (bind in keyList) {
-                actionJP.addKey(bind, 2);
-                actionJR.addKey(bind, -1);
+                pressAction.addKey(bind, 2);
+                releaseAction.addKey(bind, -1);
             }
+
             i++;
         }
     }

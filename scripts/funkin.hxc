@@ -1,8 +1,15 @@
 import funkin.data.animation.AnimationDataUtil;
-import funkin.play.notes.Strumline;
-import funkin.play.notes.notestyle.ScriptedNoteStyle;
 import funkin.play.notes.NoteSprite;
+import funkin.play.notes.Strumline;
 import funkin.play.notes.StrumlineNote;
+import funkin.play.notes.notestyle.ScriptedNoteStyle;
+import funkin.util.tools.StringTools;
+
+import flixel.FlxG;
+import funkin.Paths;
+import funkin.graphics.FunkinSprite;
+import funkin.play.notes.NoteHoldCover;
+import funkin.util.assets.FlxAnimationUtil;
 
 class FunkinNoteStyle extends ScriptedNoteStyle {
     var mkHooks:MultikeyHooks;
@@ -48,7 +55,41 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         ];
     }
 
-    override public function applyStrumlineOffsets(target:StrumlineNote) {
+    override function fetchHoldCoverAnimationData(dir) {
+        var color = StringTools.toTitleCase(mkHooks.NOTE_COLORS[mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir]]);
+        var holdCoverStartName = "holdCoverStart" + color;
+        var holdCoverName = "holdCover" + color;
+        var holdCoverEndName = "holdCoverEnd" + color;
+        var assetPath = "shared:holdCover" + color;
+
+        return [
+            AnimationDataUtil.toNamed({name: "left", prefix: assetPath}, "assetPath"),
+            AnimationDataUtil.toNamed({name: "left", prefix: holdCoverStartName}, "start"),
+            AnimationDataUtil.toNamed({name: "left", prefix: holdCoverName}, "hold"),
+            AnimationDataUtil.toNamed({name: "left", prefix: holdCoverEndName}, "end")
+        ];
+    }
+
+    override function buildHoldCoverFrameForDirection(dir) {
+        var holdCoverAssetPath:Null<String> = getHoldCoverDirectionAssetPath(dir) ?? fallback?.getHoldCoverDirectionAssetPath(dir);
+        if (holdCoverAssetPath == null) {
+            FlxG.log.warn('Hold Note Cover asset path not found: ' + id);
+            return null;
+        }
+
+        if (!FunkinSprite.isTextureCached(Paths.image(holdCoverAssetPath))) {
+            FlxG.log.warn('Hold Note Cover texture not cached: ${holdCoverAssetPath}');
+        }
+
+        var atlas = Paths.getSparrowAtlas(holdCoverAssetPath, getAssetLibrary(getHoldCoverDirectionAssetPath(dir, true)));
+        if (atlas == null) return null;
+
+        atlas.parent.persist = true;
+
+        return atlas;
+    }
+
+    override function applyStrumlineOffsets(target:StrumlineNote) {
         super.applyStrumlineOffsets(target);
         target.x -= getXPos(target.direction);
         target.x += Strumline.NOTE_SPACING * target.direction;
@@ -58,6 +99,32 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     override function buildNoteAnimations(target:NoteSprite) {
         for (i in 0...new MultikeyHooks().NOTE_COLORS.length)
             target.animation.addByPrefix(new MultikeyHooks().NOTE_COLORS[i] + "Scroll", mkHooks.NOTE_COLORS[i]);
+    }
+
+    override function buildHoldCoverAnimations(target:NoteHoldCover):Void {
+        for (direction in 0...new MultikeyHooks().NOTE_COLORS.length) {
+            var animData = fetchHoldCoverAnimationData(direction);
+            if (animData != null) {
+                animData[1].looped = true;
+                FlxAnimationUtil.addAtlasAnimations(target.glow, animData);
+            }
+        }
+    }
+
+    override function buildHoldCoverFrames(force:Bool = false) {
+        // If the hold cover frames got unloaded, ensure they get reloaded.
+        if (holdCoverFrames?.parent?.isDestroyed ?? true) holdCoverFrames = null;
+
+        // If the hold cover frames are already loaded, just use those.
+        if (holdCoverFrames != null && !force) return holdCoverFrames;
+
+        for (direction in 0...new MultikeyHooks().NOTE_COLORS.length) {
+            // We make a FlxFramesCollection here so we can combine em into one atlas later
+            var atlas = buildHoldCoverFrameForDirection(direction);
+            if (holdCoverFrames == null) holdCoverFrames = atlas;
+            else if (atlas != null) holdCoverFrames = FlxAnimationUtil.combineFramesCollections(holdCoverFrames, atlas);
+        }
+        return holdCoverFrames;
     }
 
     function getXPos(direction) {
