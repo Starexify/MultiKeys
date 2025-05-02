@@ -73,6 +73,7 @@ class MultikeyCompat extends ScriptedModule {
                 }
             }
 
+            // Add Keys to the Playbar
             if (box == null) box = chartEditor.root.findComponent("playbar", Box, false);
             if (!addedKeysComponent && box != null) {
                 var hbox = box.findComponents(null, HBox, 1)[2];
@@ -146,10 +147,11 @@ class MultikeyCompat extends ScriptedModule {
         chartEditor.buttonSelectEvent.x = chartEditor.buttonSelectPlayer.x + chartEditor.buttonSelectPlayer.width;
         chartEditor.buttonSelectPlayer.findComponent(null, Label, false).wordWrap = chartEditor.buttonSelectOpponent.findComponent(null, Label, false).wordWrap = false;
 
-        chartEditor.renderedHoldNotes.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
-        chartEditor.renderedNotes.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
-        chartEditor.renderedEvents.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
-        chartEditor.renderedSelectionSquares.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
+        chartEditor.renderedHoldNotes.clear();
+        chartEditor.renderedNotes.clear();
+        chartEditor.renderedEvents.clear();
+        chartEditor.renderedSelectionSquares.clear();
+        chartEditor.buildNoteGroup();
         chartEditor.noteDisplayDirty = true;
 
         if (chartEditor.audioWaveforms.members[0] != null) chartEditor.audioWaveforms.members[0].x = chartEditor.healthIconDad.x + chartEditor.healthIconDad.width / 2;
