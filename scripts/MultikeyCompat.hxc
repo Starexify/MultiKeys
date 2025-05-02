@@ -25,7 +25,8 @@ class MultikeyCompat extends ScriptedModule {
     override function onStateChangeEnd(event:StateChangeScriptEvent) {
         if (Std.isOfType(event.targetState, ChartEditorState)) {
             chartEditor = event.targetState;
-            ChartEditorState.STRUMLINE_SIZE = FileUtil.readJSONFromPath("assets/data/songs/2hot/2hot-metadata.json")?.keysCount;
+            var keyCount = FileUtil.readJSONFromPath("assets/data/songs/2hot/2hot-metadata.json")?.keysCount;
+            ChartEditorState.STRUMLINE_SIZE = 7;
             changeChartEditor(chartEditor, ChartEditorState.STRUMLINE_SIZE);
         }
     }
