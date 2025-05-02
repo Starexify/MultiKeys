@@ -11,7 +11,8 @@ class MultikeyNoteHandler extends ScriptedModule {
 
     var state:PlayState;
 
-    var fixedNotes:Bool = true;
+    // In case you want to handle it yourself you can change this variable !
+    var disableCharacterAnims = false;
 
     function new() {
         super("MultikeyNoteHandler");
@@ -22,9 +23,6 @@ class MultikeyNoteHandler extends ScriptedModule {
         if (PlayState.instance == null || Strumline.KEY_COUNT == 4) return;
         state = PlayState.instance;
     }
-
-    //in case you want to handle it yourself for extra characters or something idk
-    var disableCharacterAnims = false;
 
     override function onUpdate(event:UpdateScriptEvent) {
         if (state == null || Strumline.KEY_COUNT == 4) return;
@@ -49,11 +47,10 @@ class MultikeyNoteHandler extends ScriptedModule {
         if (state == null || Strumline.KEY_COUNT == 4) return;
 
         var characterID = Math.floor(event.note.noteData.data / Strumline.KEY_COUNT);
-
         if (characterID == 0) if (event.judgement == "sick") //playNoteSplash(state.playerStrumline, event.note.noteData.data % Strumline.KEY_COUNT);
 
         if (!disableCharacterAnims) {
-            var singDir = mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.data % Strumline.KEY_COUNT];
+            var singDir = mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.data];
             switch (characterID) {
                 case 0:
                     state.currentStage.getBoyfriend().playSingAnimation(singDir, false);
@@ -73,7 +70,7 @@ class MultikeyNoteHandler extends ScriptedModule {
 
         if (!disableCharacterAnims) {
             var characterID = Math.floor(event.note.noteData.data / Strumline.KEY_COUNT);
-            var singDir = mkHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.data % Strumline.KEY_COUNT];
+            var singDir = mkHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.getDirection()];
             switch (characterID) {
                 case 0:
                     state.currentStage.getBoyfriend().playSingAnimation(singDir, true);
@@ -89,7 +86,7 @@ class MultikeyNoteHandler extends ScriptedModule {
         if (state == null || Strumline.KEY_COUNT == 4) return;
 
         if (!disableCharacterAnims) {
-            var singDir = mkHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.dir % Strumline.KEY_COUNT];
+            var singDir = mkHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.dir];
             state.currentStage.getBoyfriend().playSingAnimation(singDir, true);
         }
     }
@@ -127,16 +124,10 @@ class MultikeyNoteHandler extends ScriptedModule {
         }
     }
 
-
     // Cleanup
-    override function onSubStateCloseBegin(event:SubStateScriptEvent) { if (Std.isOfType(event.targetState, PlayState)) cleanup(); }
+    override function onSubStateCloseBegin(event:SubStateScriptEvent) { if (Std.isOfType(event.targetState, PlayState)) state = null; }
 
-    override function onSongEnd(event:ScriptEvent) { cleanup(); }
+    override function onSongEnd(event:ScriptEvent) { state = null; }
 
-    override function onDestroy(event:ScriptEvent) { cleanup(); }
-
-    function cleanup() {
-        state = null;
-        fixedNotes = false;
-    }
+    override function onDestroy(event:ScriptEvent) { state = null; }
 }

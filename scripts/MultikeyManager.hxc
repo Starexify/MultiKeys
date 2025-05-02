@@ -55,6 +55,7 @@ class MultikeyManager extends ScriptedModule {
         Strumline.NOTE_SPACING = mkHooks.NOTE_GAPS[Strumline.KEY_COUNT];
         Strumline.DIRECTIONS = [];
         for (i in 0...Strumline.KEY_COUNT) Strumline.DIRECTIONS.push(i);
+        NoteSprite.DIRECTION_COLORS = mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT];
     }
 
     override function onSongEvent(event:SongEventScriptEvent) {
@@ -74,7 +75,7 @@ class MultikeyManager extends ScriptedModule {
     override function onSongLoaded(event:SongLoadScriptEvent) {
         if (PlayState.instance == null && Strumline.KEY_COUNT == 4) return;
         state = PlayState.instance;
-
+        Strumline.NOTE_SPLASH_CAP = 0;
         processExtraNotes(state.playerStrumline, Strumline.KEY_COUNT);
         processExtraNotes(state.opponentStrumline, Strumline.KEY_COUNT);
     }
@@ -84,7 +85,7 @@ class MultikeyManager extends ScriptedModule {
     }
 
     override function onUpdate(event:UpdateScriptEvent) {
-        // Handle keybinds.
+        // Handle keybinds
         if (state == null || state.criticalFailure || PlayState.instance.isGamePaused) return;
         if (Strumline.KEY_COUNT == 4) return;
         for (i in 0...justPressedActions.length) {

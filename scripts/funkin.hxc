@@ -19,11 +19,6 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         mkHooks = new MultikeyHooks();
     }
 
-    override function isNoteSplashEnabled() {
-        if (!super.isNoteSplashEnabled()) return false;
-        return Strumline.KEY_COUNT == 4;
-    }
-
     override function isHoldNoteCoverEnabled() {
         if (!super.isHoldNoteCoverEnabled()) return false;
         return Strumline.KEY_COUNT == 4;
@@ -42,10 +37,10 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     }
 
     override function getStrumlineAnimationData(dir) {
-        var dir = mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir];
-        var staticName = "arrow" + mkHooks.DIRECTION_NAMES[dir];
-        var pressName = mkHooks.NOTE_COLORS[dir] + " press";
-        var confirmName = mkHooks.NOTE_COLORS[dir] + " confirm";
+        var multiDir = mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir];
+        var staticName = "arrow" + mkHooks.DIRECTION_NAMES[multiDir];
+        var pressName = mkHooks.NOTE_COLORS[multiDir] + " press";
+        var confirmName = mkHooks.NOTE_COLORS[multiDir] + " confirm";
 
         return [
             AnimationDataUtil.toNamed({prefix: staticName}, "static"),
@@ -53,6 +48,13 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
             AnimationDataUtil.toNamed({prefix: confirmName}, "confirm"),
             AnimationDataUtil.toNamed({prefix: confirmName}, "confirm-hold")
         ];
+    }
+
+    override function fetchSplashAnimationData(dir) {
+        var splash1 = "note impact 1 " + mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir] + "0";
+        var splash2 = "note impact 2 " + mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir] + "0";
+
+        return AnimationDataUtil.toNamedArray([{prefix: splash1}, {prefix: splash2}], "splashLEFT");
     }
 
     override function fetchHoldCoverAnimationData(dir) {
@@ -68,6 +70,12 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
             AnimationDataUtil.toNamed({name: "left", prefix: holdCoverName}, "hold"),
             AnimationDataUtil.toNamed({name: "left", prefix: holdCoverEndName}, "end")
         ];
+    }
+
+    override function fetchNoteAnimationData(dir) {
+        var arrowName = mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir];
+
+        return AnimationDataUtil.toNamed({prefix: arrowName});
     }
 
     override function buildHoldCoverFrameForDirection(dir) {
@@ -87,13 +95,6 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         atlas.parent.persist = true;
 
         return atlas;
-    }
-
-    override function applyStrumlineOffsets(target:StrumlineNote) {
-        super.applyStrumlineOffsets(target);
-        target.x -= getXPos(target.direction);
-        target.x += Strumline.NOTE_SPACING * target.direction;
-        target.x += Strumline.NUDGE;
     }
 
     override function buildNoteAnimations(target:NoteSprite) {
@@ -125,6 +126,13 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
             else if (atlas != null) holdCoverFrames = FlxAnimationUtil.combineFramesCollections(holdCoverFrames, atlas);
         }
         return holdCoverFrames;
+    }
+
+    override function applyStrumlineOffsets(target:StrumlineNote) {
+        super.applyStrumlineOffsets(target);
+        target.x -= getXPos(target.direction);
+        target.x += Strumline.NOTE_SPACING * target.direction;
+        target.x += Strumline.NUDGE;
     }
 
     function getXPos(direction) {

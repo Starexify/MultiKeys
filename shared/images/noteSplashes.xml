@@ -6,10 +6,6 @@
 	<SubTexture name="note impact 1 blue0001" x="197" y="4" width="213" height="265" frameX="-27" frameY="-22" frameWidth="260" frameHeight="298"/>
 	<SubTexture name="note impact 1 blue0002" x="414" y="4" width="252" height="291" frameX="-4" frameY="-6" frameWidth="260" frameHeight="298"/>
 	<SubTexture name="note impact 1 blue0003" x="670" y="4" width="260" height="298"/>
-	<SubTexture name="note impact 1  blue0000" x="4" y="4" width="189" height="270" frameX="-32" frameY="-12" frameWidth="260" frameHeight="298"/>
-	<SubTexture name="note impact 1  blue0001" x="197" y="4" width="213" height="265" frameX="-27" frameY="-22" frameWidth="260" frameHeight="298"/>
-	<SubTexture name="note impact 1  blue0002" x="414" y="4" width="252" height="291" frameX="-4" frameY="-6" frameWidth="260" frameHeight="298"/>
-	<SubTexture name="note impact 1  blue0003" x="670" y="4" width="260" height="298"/>
 	<SubTexture name="note impact 1 dark0000" x="934" y="4" width="189" height="270" frameX="-32" frameY="-12" frameWidth="260" frameHeight="298"/>
 	<SubTexture name="note impact 1 dark0001" x="1127" y="4" width="213" height="265" frameX="-27" frameY="-22" frameWidth="260" frameHeight="298"/>
 	<SubTexture name="note impact 1 dark0002" x="1344" y="4" width="252" height="291" frameX="-4" frameY="-6" frameWidth="260" frameHeight="298"/>
@@ -46,10 +42,6 @@
 	<SubTexture name="note impact 2 blue0001" x="4" y="608" width="225" height="238" frameX="-20" frameY="-19" frameWidth="274" frameHeight="267"/>
 	<SubTexture name="note impact 2 blue0002" x="233" y="608" width="265" height="257" frameX="0" frameY="-10" frameWidth="274" frameHeight="267"/>
 	<SubTexture name="note impact 2 blue0003" x="502" y="608" width="224" height="258" frameX="-50" frameY="0" frameWidth="274" frameHeight="267"/>
-	<SubTexture name="note impact 2  blue0000" x="3724" y="306" width="169" height="201" frameX="-45" frameY="-41" frameWidth="274" frameHeight="267"/>
-	<SubTexture name="note impact 2  blue0001" x="4" y="608" width="225" height="238" frameX="-20" frameY="-19" frameWidth="274" frameHeight="267"/>
-	<SubTexture name="note impact 2  blue0002" x="233" y="608" width="265" height="257" frameX="0" frameY="-10" frameWidth="274" frameHeight="267"/>
-	<SubTexture name="note impact 2  blue0003" x="502" y="608" width="224" height="258" frameX="-50" frameY="0" frameWidth="274" frameHeight="267"/>
 	<SubTexture name="note impact 2 dark0000" x="730" y="608" width="169" height="201" frameX="-45" frameY="-41" frameWidth="274" frameHeight="267"/>
 	<SubTexture name="note impact 2 dark0001" x="903" y="608" width="225" height="238" frameX="-20" frameY="-19" frameWidth="274" frameHeight="267"/>
 	<SubTexture name="note impact 2 dark0002" x="1132" y="608" width="265" height="257" frameX="0" frameY="-10" frameWidth="274" frameHeight="267"/>

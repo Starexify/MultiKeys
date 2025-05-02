@@ -1,4 +1,5 @@
 import funkin.Highscore;
+import funkin.Paths;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.play.PlayState;
@@ -32,13 +33,14 @@ class NoteSpawnFix extends ScriptedModule {
     override function onNoteIncoming(event:NoteScriptEvent) {
         if (state == null || Strumline.KEY_COUNT == 4) return;
 
+        // Set correct direction for incoming Notes
         event.note.direction = event.note.noteData.data % Strumline.KEY_COUNT;
-        event.note.animation.play(mkHooks.NOTE_COLORS[mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.direction]] + "Scroll");
         event.note.x -= PlayState.instance.playerStrumline.getXPos(event.note.noteData.data % 4);
         event.note.x += Strumline.NOTE_SPACING * event.note.direction;
+
         if (event.note.get_isHoldNote()) {
-            //set correct color for sustain
-            event.note.holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + mkHooks.NOTE_COLORS[new MultikeyHooks().MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.direction]]));
+            // Set correct color for Sustain Notes
+            event.note.holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + mkHooks.NOTE_COLORS[mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.direction]]));
             event.note.holdNoteSprite.noteDirection = event.note.direction;
             event.note.holdNoteSprite.graphicWidth = event.note.holdNoteSprite.graphic.width / 8 * event.note.holdNoteSprite.zoom;
             event.note.holdNoteSprite.updateColorTransform();
