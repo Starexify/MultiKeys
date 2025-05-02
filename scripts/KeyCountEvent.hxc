@@ -1,7 +1,6 @@
 import funkin.data.event.SongEventSchema;
 import funkin.play.PlayState;
 import funkin.play.event.ScriptedSongEvent;
-import funkin.play.notes.Strumline;
 
 class KeyCountEvent extends ScriptedSongEvent {
     function new() {

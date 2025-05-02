@@ -1,13 +1,10 @@
-import funkin.modding.module.ScriptedModule;
 import funkin.modding.events.ScriptEvent;
+import funkin.modding.module.ScriptedModule;
 import funkin.play.PlayState;
-import funkin.play.notes.Strumline;
-import funkin.play.notes.NoteHoldCover;
-import funkin.Paths;
-import funkin.util.assets.FlxAnimationUtil;
-import flixel.FlxG;
 import funkin.play.notes.NoteSplash;
-import funkin.util.tools.StringTools;
+import funkin.play.notes.Strumline;
+
+import flixel.FlxG;
 
 class MultikeyNoteHandler extends ScriptedModule {
     var mkHooks:MultikeyHooks;

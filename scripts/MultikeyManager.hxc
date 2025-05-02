@@ -14,7 +14,6 @@ import funkin.util.tools.StringTools;
 import flixel.FlxG;
 import flixel.input.actions.FlxAction;
 import flixel.input.actions.FlxActionDigital;
-import flixel.input.actions.FlxInputDevice;
 import flixel.math.FlxMath;
 
 import Lambda;
@@ -61,6 +60,7 @@ class MultikeyManager extends ScriptedModule {
     override function onSongEvent(event:SongEventScriptEvent) {
         if (event.eventData.eventKind == "KeyCountEvent") {
             keysCount = event.eventData.value?.keyCount;
+            if (keysCount == Strumline.KEY_COUNT) return;
             Strumline.KEY_COUNT = event.eventData.value?.keyCount;
             setupMultikey(Strumline.KEY_COUNT);
             refreshStrumline(state.playerStrumline, Strumline.KEY_COUNT);
@@ -214,6 +214,7 @@ class MultikeyManager extends ScriptedModule {
     }
 
     function refreshStrumline(strumline:Strumline, totalKeys:Int) {
+        // TODO: Do some animation while changing them
         strumline.updateHitbox();
         strumline.strumlineNotes.clear();
         for (i in 0...totalKeys) {

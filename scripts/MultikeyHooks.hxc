@@ -1,4 +1,5 @@
 import funkin.modding.module.ScriptedModule;
+
 import flixel.math.FlxMath;
 
 class MultikeyHooks extends ScriptedModule {
