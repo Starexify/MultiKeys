@@ -1,0 +1,32 @@
+import funkin.data.event.SongEventSchema;
+import funkin.play.PlayState;
+import funkin.play.event.ScriptedSongEvent;
+import funkin.play.notes.Strumline;
+
+class KeyCountEvent extends ScriptedSongEvent {
+    function new() {
+        super("KeyCountEvent");
+    }
+
+    override function handleEvent(data:SongEventData) {
+        var state = PlayState.instance;
+        if (state == null || state.currentStage == null) return;
+        trace("[MultiKeys] Changing strumline keys to: " + data.value?.keyCount);
+    }
+
+    override function getEventSchema():SongEventSchema {
+        return [
+            {
+                name: "keyCount",
+                title: "Set key count to",
+                type: "integer",
+                defaultValue: 4,
+                units: "keys"
+            }
+        ];
+    }
+
+    override function getTitle() {
+        return "Change Key Count";
+    }
+}

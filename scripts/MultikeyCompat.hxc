@@ -1,9 +1,22 @@
+import funkin.data.song.importer.FNFLegacyImporter;
 import funkin.modding.module.ScriptedModule;
 import funkin.modding.events.ScriptEvent;
 import funkin.play.notes.Strumline;
 import funkin.ui.debug.charting.ChartEditorState;
+import funkin.ui.debug.charting.handlers.ChartEditorThemeHandler;
+
+import flixel.util.FlxTimer;
+import funkin.util.FileUtil;
+import funkin.util.FileWriteMode;
+import funkin.ui.debug.charting.toolboxes.ChartEditorMetadataToolbox;
+import haxe.ui.components.NumberStepper;
+import funkin.Paths;
+import haxe.ui.components.Label;
+import haxe.ui.containers.Frame;
+import haxe.ui.containers.Grid;
 
 class MultikeyCompat extends ScriptedModule {
+    var chartEditor:ChartEditorState;
 
     function new() {
         super("MultikeyCompat");
@@ -11,22 +24,99 @@ class MultikeyCompat extends ScriptedModule {
 
     override function onStateChangeEnd(event:StateChangeScriptEvent) {
         if (Std.isOfType(event.targetState, ChartEditorState)) {
-            var state:ChartEditorState = event.targetState;
+            chartEditor = event.targetState;
+            ChartEditorState.STRUMLINE_SIZE = FileUtil.readJSONFromPath("assets/data/songs/2hot/2hot-metadata.json")?.keysCount;
+            changeChartEditor(chartEditor, ChartEditorState.STRUMLINE_SIZE);
+        }
+    }
 
-            for (waveform in state.audioWaveforms) {
-                if (waveform.x == 840) {
-                    var offset = (Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) - 160;
-                    waveform.x += offset;
-                }
-                else if (waveform.x == 360) {
-                    var offset = -(Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) + 160;
-                    waveform.x += offset;
+    var values = [1, 2, 3, 4, 5, 6, 7, 8, 9, 8, 7, 6, 5, 4, 3, 2];
+    var currentIndex = 0;
+    var timeTracker:Float = 0;
+    var timeInterval:Float = 2.0;
+    var addedComponent:Bool;
+
+    override function onUpdate(event:UpdateScriptEvent) {
+        if (chartEditor != null) {
+            //trace(chartEditor.get_currentSongMetadata()?.keysCount);
+            if (!addedComponent && chartEditor.activeToolboxes.exists(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT)) {
+                var metadataToolbox = chartEditor.activeToolboxes.get(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT);
+                var frameVariation = metadataToolbox.findComponent("frameVariation", Frame, true);
+
+                if (frameVariation != null) {
+                    var grid = frameVariation.findComponent(null, Grid, true);
+                    if (grid != null) {
+                        var keyCountLabel:Label = new Label();
+                        keyCountLabel.text = "Key Count:";
+                        keyCountLabel.verticalAlign = "center";
+                        keyCountLabel.horizontalAlign = "right";
+
+                        var keyCount:NumberStepper = new NumberStepper();
+                        keyCount.id = "keyCount";
+                        keyCount.pos = 4;
+                        keyCount.min = 1;
+                        keyCount.max = 9;
+                        keyCount.tooltip = "Set the key count of the song variation.";
+
+                        grid.addComponent(keyCountLabel);
+                        grid.addComponent(keyCount);
+
+                        addedComponent = true;
+                    }
                 }
             }
-            state.buttonSelectOpponent.width = ChartEditorState.GRID_SIZE * Strumline.KEY_COUNT;
-            state.buttonSelectPlayer.width = ChartEditorState.GRID_SIZE * Strumline.KEY_COUNT;
-            state.buttonSelectPlayer.x = state.buttonSelectOpponent.x + state.buttonSelectOpponent.width;
-            state.buttonSelectEvent.x = state.buttonSelectPlayer.x + state.buttonSelectPlayer.width;
         }
+/*        timeTracker += event.elapsed;
+        if (timeTracker >= timeInterval) {
+            // Reset timer
+            timeTracker = 0;
+
+            // Process the next value in our sequence
+            if (chartEditor != null) {
+                // Set the current value from our array
+                ChartEditorState.STRUMLINE_SIZE = values[currentIndex];
+                changeChartEditor(chartEditor, ChartEditorState.STRUMLINE_SIZE);
+
+                // Increment index and wrap around if needed
+                currentIndex = (currentIndex + 1) % values.length;
+            }
+        }*/
+    }
+
+    function changeChartEditor(chartEditor:ChartEditorState, keyCount:Int) {
+        ChartEditorThemeHandler.TOTAL_COLUMN_COUNT = ChartEditorState.STRUMLINE_SIZE * 2 + 1;
+        ChartEditorState.NOTE_PREVIEW_X_POS = -(keyCount * ChartEditorState.GRID_SIZE) + 480;
+        FNFLegacyImporter.STRUMLINE_SIZE = keyCount;
+        //chartEditor.gridTiledSprite.x = chartEditor.get_GRID_X_POS();
+/*        chartEditor.remove(chartEditor.gridTiledSprite);
+        chartEditor.remove(chartEditor.gridGhostNote);
+        chartEditor.remove(chartEditor.gridGhostHoldNote);
+        chartEditor.remove(chartEditor.gridGhostEvent);
+        chartEditor.remove(chartEditor.gridPlayhead);
+        chartEditor.remove(chartEditor.healthIconDad);
+        chartEditor.remove(chartEditor.healthIconBF);
+        chartEditor.remove(chartEditor.audioWaveforms);
+        chartEditor.remove(chartEditor.renderedHoldNotes);
+        chartEditor.remove(chartEditor.renderedNotes);
+        chartEditor.remove(chartEditor.renderedEvents);
+        chartEditor.remove(chartEditor.renderedSelectionSquares);
+        chartEditor.buildGrid();
+        chartEditor.updateGridHeight();*/
+
+        for (waveform in chartEditor.audioWaveforms) {
+            if (waveform.x == 840) {
+                var offset = (keyCount * ChartEditorState.GRID_SIZE) - 160;
+                waveform.x += offset;
+            }
+            else if (waveform.x == 360) {
+                var offset = -(keyCount * ChartEditorState.GRID_SIZE) + 160;
+                waveform.x += offset;
+            }
+        }
+
+        chartEditor.buttonSelectOpponent.width = ChartEditorState.GRID_SIZE * keyCount;
+        chartEditor.buttonSelectPlayer.width = ChartEditorState.GRID_SIZE * keyCount;
+        chartEditor.buttonSelectPlayer.x = chartEditor.buttonSelectOpponent.x + chartEditor.buttonSelectOpponent.width;
+        chartEditor.buttonSelectEvent.x = chartEditor.buttonSelectPlayer.x + chartEditor.buttonSelectPlayer.width;
     }
 }

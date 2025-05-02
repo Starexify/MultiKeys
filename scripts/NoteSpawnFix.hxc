@@ -23,6 +23,12 @@ class NoteSpawnFix extends ScriptedModule {
         if (Strumline.KEY_COUNT != 4) regenNoteData();
     }
 
+    override function onSongEvent(event:SongEventScriptEvent) {
+        if (event.eventData.eventKind == "KeyCountEvent") {
+            reapplyNoteData();
+        }
+    }
+
     override function onNoteIncoming(event:NoteScriptEvent) {
         if (state == null || Strumline.KEY_COUNT == 4) return;
 
@@ -53,12 +59,16 @@ class NoteSpawnFix extends ScriptedModule {
     * Regens the Note Data with the multikey directions
     */
     function regenNoteData() {
-        state.playerStrumline.clean();
-        state.opponentStrumline.clean();
+        reapplyNoteData();
 
         Highscore.tallies.combo = 0;
         Highscore.tallies.totalNotes = 0;
         // Highscore.tallies = new Tallies();
+    }
+
+    function reapplyNoteData() {
+        state.playerStrumline.clean();
+        state.opponentStrumline.clean();
 
         // Reset the notes on each strumline.
         var playerNoteData = [];
@@ -70,11 +80,8 @@ class NoteSpawnFix extends ScriptedModule {
             if (strumTime < 0) continue; // Skip notes that are before the start time.
 
             switch (songNote.getStrumlineIndex(Strumline.KEY_COUNT)) {
-                case 0:
-                    playerNoteData.push(songNote);
-                    Highscore.tallies.totalNotes++;
-                case 1:
-                    opponentNoteData.push(songNote);
+                case 0: playerNoteData.push(songNote);
+                case 1: opponentNoteData.push(songNote);
             }
         }
 

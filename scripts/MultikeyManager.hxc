@@ -1,6 +1,3 @@
-import funkin.data.song.importer.FNFLegacyImporter;
-import funkin.input.Control;
-import funkin.input.Controls;
 import funkin.input.FunkinAction;
 import funkin.input.PreciseInputManager;
 import funkin.modding.events.ScriptEvent;
@@ -9,9 +6,8 @@ import funkin.play.PauseSubState;
 import funkin.play.PlayState;
 import funkin.play.notes.NoteSprite;
 import funkin.play.notes.Strumline;
+import funkin.play.notes.StrumlineNote;
 import funkin.save.Save;
-import funkin.ui.debug.charting.ChartEditorState;
-import funkin.ui.debug.charting.handlers.ChartEditorThemeHandler;
 import funkin.util.Constants;
 import funkin.util.tools.StringTools;
 
@@ -28,6 +24,8 @@ class MultikeyManager extends ScriptedModule {
     var mkHooks:MultikeyHooks;
 
     var state:PlayState;
+    var keysCount:Int;
+
     var inputPressQueue:Array<PreciseInputEvent> = [];
     var inputReleaseQueue:Array<PreciseInputEvent> = [];
 
@@ -50,30 +48,35 @@ class MultikeyManager extends ScriptedModule {
     }
 
     function onStateChange(state) {
-        if (Std.isOfType(state, PlayState)) setupMultikey();
+        if (Std.isOfType(state, PlayState)) setupMultikey(Strumline.KEY_COUNT);
     }
 
-    function setupMultikey() {
-        Strumline.KEY_COUNT = 4;
-
-        Strumline.KEY_COUNT = 5;
-        ChartEditorState.STRUMLINE_SIZE = Strumline.KEY_COUNT;
-        ChartEditorThemeHandler.TOTAL_COLUMN_COUNT = ChartEditorState.STRUMLINE_SIZE * 2 + 1;
-        ChartEditorState.NOTE_PREVIEW_X_POS = -(Strumline.KEY_COUNT * ChartEditorState.GRID_SIZE) + 480;
-        FNFLegacyImporter.STRUMLINE_SIZE = Strumline.KEY_COUNT;
+    function setupMultikey(keyCount:Int) {
         Strumline.STRUMLINE_SIZE = Std.int(104 * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT]);
         Strumline.NOTE_SPACING = mkHooks.NOTE_GAPS[Strumline.KEY_COUNT];
         Strumline.DIRECTIONS = [];
         for (i in 0...Strumline.KEY_COUNT) Strumline.DIRECTIONS.push(i);
     }
 
+    override function onSongEvent(event:SongEventScriptEvent) {
+        if (event.eventData.eventKind == "KeyCountEvent") {
+            keysCount = event.eventData.value?.keyCount;
+            Strumline.KEY_COUNT = event.eventData.value?.keyCount;
+            setupMultikey(Strumline.KEY_COUNT);
+            refreshStrumline(state.playerStrumline, Strumline.KEY_COUNT);
+            processExtraNotes(state.playerStrumline, Strumline.KEY_COUNT);
+            refreshStrumline(state.opponentStrumline, Strumline.KEY_COUNT);
+            processExtraNotes(state.opponentStrumline, Strumline.KEY_COUNT);
+            initPreciseInputs();
+        }
+    }
+
     override function onSongLoaded(event:SongLoadScriptEvent) {
         if (PlayState.instance == null && Strumline.KEY_COUNT == 4) return;
         state = PlayState.instance;
 
-        var totalKeys = Strumline.KEY_COUNT;
-        processExtraNotes(state.playerStrumline, totalKeys);
-        processExtraNotes(state.opponentStrumline, totalKeys);
+        processExtraNotes(state.playerStrumline, Strumline.KEY_COUNT);
+        processExtraNotes(state.opponentStrumline, Strumline.KEY_COUNT);
     }
 
     override function onCountdownStart(event:CountdownScriptEvent) {
@@ -204,10 +207,22 @@ class MultikeyManager extends ScriptedModule {
     // Helper Methods
     function processExtraNotes(strumline:Strumline, totalKeys:Int) {
         var notesArray = strumline.strumlineNotes.members;
-
-        for (i in 0...totalKeys) {
+        for (i in 0...Strumline.KEY_COUNT) {
             notesArray[i].direction = mkHooks.NOTE_DIRECTIONS[totalKeys][i];
-            trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == state.playerStrumline ? " (Player)" : " (Opponent)"));
+            //trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == state.playerStrumline ? " (Player)" : " (Opponent)"));
+        }
+    }
+
+    function refreshStrumline(strumline:Strumline, totalKeys:Int) {
+        strumline.updateHitbox();
+        strumline.strumlineNotes.clear();
+        for (i in 0...totalKeys) {
+            var child:StrumlineNote = new StrumlineNote(strumline.noteStyle, strumline.isPlayer, Strumline.DIRECTIONS[i]);
+            child.x = strumline.getXPos(Strumline.DIRECTIONS[i]);
+            child.x += Strumline.INITIAL_OFFSET;
+            child.y = 0;
+            strumline.noteStyle.applyStrumlineOffsets(child);
+            strumline.strumlineNotes.add(child);
         }
     }
 
