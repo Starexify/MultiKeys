@@ -4,6 +4,7 @@ import funkin.modding.module.ScriptedModule;
 import funkin.modding.events.ScriptEvent;
 import funkin.play.notes.Strumline;
 import funkin.ui.debug.charting.ChartEditorState;
+import funkin.ui.debug.charting.components.ChartEditorEventSprite;
 import funkin.ui.debug.charting.handlers.ChartEditorThemeHandler;
 import funkin.ui.debug.charting.handlers.ChartEditorToolboxHandler;
 import funkin.util.FileWriteMode;
@@ -22,6 +23,8 @@ import haxe.ui.events.UIEvent;
 class MultikeyCompat extends ScriptedModule {
     var chartEditor:ChartEditorState;
 
+    var DEFAULT_KEY_COUNT:Int = 4;
+
     var addedComponent:Bool;
     var addedKeysComponent:Bool;
     var box:Null<Box>;
@@ -33,7 +36,7 @@ class MultikeyCompat extends ScriptedModule {
     override function onStateChangeEnd(event:StateChangeScriptEvent) {
         if (Std.isOfType(event.targetState, ChartEditorState)) {
             chartEditor = event.targetState;
-            updateChartEditor(chartEditor, ChartEditorState.STRUMLINE_SIZE);
+            updateChartEditor(chartEditor, DEFAULT_KEY_COUNT);
         }
     }
 
@@ -120,6 +123,22 @@ class MultikeyCompat extends ScriptedModule {
                     addedKeysComponent = true;
                 }
             }
+
+            setChartEditorKeyCount(chartEditor);
+        }
+    }
+
+    public function setChartEditorKeyCount(chartEditor:ChartEditorState) {
+        var currentEvent:ChartEditorEventSprite = null;
+        for (eventSprite in chartEditor.renderedEvents) {
+            if (FlxG.overlap(chartEditor.gridPlayhead, eventSprite)) {
+                currentEvent = eventSprite;
+                break;
+            }
+        }
+
+        if (currentEvent != null && currentEvent.eventData != null && currentEvent.eventData.eventKind == "KeyCountEvent" && currentEvent.eventData.value != null) {
+            updateChartEditor(chartEditor, currentEvent.eventData.value.keyCount);
         }
     }
 

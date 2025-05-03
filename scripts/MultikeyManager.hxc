@@ -17,6 +17,7 @@ import flixel.input.actions.FlxActionDigital;
 import flixel.math.FlxMath;
 
 import Lambda;
+import funkin.Preferences;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
@@ -207,24 +208,37 @@ class MultikeyManager extends ScriptedModule {
 
     // Helper Methods
     function processExtraNotes(strumline:Strumline, totalKeys:Int) {
+        // TODO: Fix X/Y position of Strumline respectively StrumNotes
+/*        if (totalKeys != 4) {
+            var centering = 20;
+            if (strumline == state.playerStrumline) {
+                strumline.x = FlxG.width / 2 + Constants.STRUMLINE_X_OFFSET - centering;
+            } else {
+                strumline.x = Constants.STRUMLINE_X_OFFSET - centering;
+            }
+        }*/
         var notesArray = strumline.strumlineNotes.members;
-        for (i in 0...Strumline.KEY_COUNT) {
-            notesArray[i].direction = mkHooks.NOTE_DIRECTIONS[totalKeys][i];
-            notesArray[i].x = getXPos(Strumline.DIRECTIONS[i]);
-            notesArray[i].x += Strumline.INITIAL_OFFSET;
-            //trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == state.playerStrumline ? " (Player)" : " (Opponent)"));
+        for (i in 0...totalKeys) {
+            if (notesArray[i] != null) {
+                notesArray[i].direction = mkHooks.NOTE_DIRECTIONS[totalKeys][i];
+                notesArray[i].x = strumline.x;
+                notesArray[i].x += getXPos(Strumline.DIRECTIONS[i]);
+                strumline.noteStyle.applyStrumlineOffsets(notesArray[i]);
+                //trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == state.playerStrumline ? " (Player)" : " (Opponent)"));
+            }
         }
     }
 
     function refreshStrumline(strumline:Strumline, totalKeys:Int) {
         // TODO: Do some animation while changing them and place them in the middle
-
         strumline.strumlineNotes.clear();
+        strumline.background.scale.x = Std.int(strumline.width / 2 + Strumline.BACKGROUND_PAD);
+        strumline.background.x = strumline.x - Strumline.BACKGROUND_PAD;
+        strumline.background.updateHitbox();
         for (i in 0...totalKeys) {
             var child:StrumlineNote = new StrumlineNote(strumline.noteStyle, strumline.isPlayer, Strumline.DIRECTIONS[i]);
             child.x = getXPos(Strumline.DIRECTIONS[i]);
-            child.x += Strumline.INITIAL_OFFSET;
-            child.y = 0;
+            child.x -= Strumline.INITIAL_OFFSET;
             strumline.noteStyle.applyStrumlineOffsets(child);
             strumline.strumlineNotes.add(child);
         }
@@ -233,14 +247,14 @@ class MultikeyManager extends ScriptedModule {
     function getXPos(direction) {
         return switch (direction) {
             case 0: 0;
-            case 1: 0 + (1 * Strumline.NOTE_SPACING);
-            case 2: 0 + (2 * Strumline.NOTE_SPACING);
-            case 3: 0 + (3 * Strumline.NOTE_SPACING);
-            case 4: 0 + (4 * Strumline.NOTE_SPACING);
-            case 5: 0 + (5 * Strumline.NOTE_SPACING);
-            case 6: 0 + (6 * Strumline.NOTE_SPACING);
-            case 7: 0 + (7 * Strumline.NOTE_SPACING);
-            case 8: 0 + (8 * Strumline.NOTE_SPACING);
+            case 1: 1 * Strumline.NOTE_SPACING;
+            case 2: 2 * Strumline.NOTE_SPACING;
+            case 3: 3 * Strumline.NOTE_SPACING;
+            case 4: 4 * Strumline.NOTE_SPACING;
+            case 5: 5 * Strumline.NOTE_SPACING;
+            case 6: 6 * Strumline.NOTE_SPACING;
+            case 7: 7 * Strumline.NOTE_SPACING;
+            case 8: 8 * Strumline.NOTE_SPACING;
             default: 0;
         }
     }

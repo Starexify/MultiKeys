@@ -20,36 +20,6 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         mkHooks = new MultikeyHooks();
     }
 
-    override function isHoldNoteCoverEnabled() {
-        if (!super.isHoldNoteCoverEnabled()) return false;
-        return Strumline.KEY_COUNT == 4;
-    }
-
-    override function fetchHoldNoteScale() {
-        return super.fetchHoldNoteScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
-    }
-
-    override function getNoteScale() {
-        return super.getNoteScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
-    }
-
-    override function getStrumlineScale() {
-        return super.getStrumlineScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
-    }
-
-/*    override function getHoldNoteAssetPath(raw) {
-        if (raw) {
-            var rawPath = Strumline.KEY_COUNT + _data?.assets?.holdNote?.assetPath;
-            return rawPath ?? fallback.getHoldNoteAssetPath(true);
-        }
-
-        // library:path
-        var parts = getHoldNoteAssetPath(true).split(Constants.LIBRARY_SEPARATOR) ?? [];
-        if (parts.length == 0) return null;
-        if (parts.length == 1) return Paths.image(parts[0]);
-        return Paths.image(parts[1], parts[0]);
-    }*/
-
     override function getStrumlineAnimationData(dir) {
         var multiDir = mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir];
         var staticName = "arrow" + mkHooks.DIRECTION_NAMES[multiDir];
@@ -142,6 +112,24 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         return holdCoverFrames;
     }
 
+    override function isHoldNoteCoverEnabled() {
+        if (!super.isHoldNoteCoverEnabled()) return false;
+        return Strumline.KEY_COUNT == 4;
+    }
+
+    // Scaling
+    override function fetchHoldNoteScale() {
+        return super.fetchHoldNoteScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+    }
+
+    override function getNoteScale() {
+        return super.getNoteScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+    }
+
+    override function getStrumlineScale() {
+        return super.getStrumlineScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+    }
+
 /*    override function applyStrumlineOffsets(target:StrumlineNote) {
         super.applyStrumlineOffsets(target);
         target.x -= getXPos(target.direction);
@@ -150,17 +138,12 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     }
 
     function getXPos(direction) {
-        switch (direction) {
-            case 0:
-                return 0;
-            case 1:
-                return Strumline.NOTE_SPACING;
-            case 2:
-                return 2 * Strumline.NOTE_SPACING;
-            case 3:
-                return 3 * Strumline.NOTE_SPACING;
-            default:
-                return 0;
+        return switch (direction) {
+            case 0: 0;
+            case 1: 1 * Strumline.NOTE_SPACING;
+            case 2: 2 * Strumline.NOTE_SPACING;
+            case 3: 3 * Strumline.NOTE_SPACING;
+            default: 0;
         }
     }*/
 }
