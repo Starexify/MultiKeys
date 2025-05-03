@@ -174,7 +174,7 @@ class MultikeyManager extends ScriptedModule {
         var keySets = multikeysOptions.controls[Strumline.KEY_COUNT - 1];
         var i = 0;
         for (keyList in keySets) {
-            var keyName = "multikey_" + StringTools.toLowerKebabCase(mkHooks.NOTE_DIRECTION_NAMES[Strumline.KEY_COUNT][i]);
+            var keyName = "multikey_" + StringTools.toLowerKebabCase(mkHooks.NOTE_DIRECTION_NAMES[Strumline.KEY_COUNT - 1][i]);
             var pressAction = new FlxActionDigital(keyName + "-press");
             //var pressAction = new FunkinAction(keyName + "-press");
             justPressedActions.push(pressAction);
@@ -210,21 +210,38 @@ class MultikeyManager extends ScriptedModule {
         var notesArray = strumline.strumlineNotes.members;
         for (i in 0...Strumline.KEY_COUNT) {
             notesArray[i].direction = mkHooks.NOTE_DIRECTIONS[totalKeys][i];
+            notesArray[i].x = getXPos(Strumline.DIRECTIONS[i]);
+            notesArray[i].x += Strumline.INITIAL_OFFSET;
             //trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == state.playerStrumline ? " (Player)" : " (Opponent)"));
         }
     }
 
     function refreshStrumline(strumline:Strumline, totalKeys:Int) {
-        // TODO: Do some animation while changing them
-        strumline.updateHitbox();
+        // TODO: Do some animation while changing them and place them in the middle
+
         strumline.strumlineNotes.clear();
         for (i in 0...totalKeys) {
             var child:StrumlineNote = new StrumlineNote(strumline.noteStyle, strumline.isPlayer, Strumline.DIRECTIONS[i]);
-            child.x = strumline.getXPos(Strumline.DIRECTIONS[i]);
+            child.x = getXPos(Strumline.DIRECTIONS[i]);
             child.x += Strumline.INITIAL_OFFSET;
             child.y = 0;
             strumline.noteStyle.applyStrumlineOffsets(child);
             strumline.strumlineNotes.add(child);
+        }
+    }
+
+    function getXPos(direction) {
+        return switch (direction) {
+            case 0: 0;
+            case 1: 0 + (1 * Strumline.NOTE_SPACING);
+            case 2: 0 + (2 * Strumline.NOTE_SPACING);
+            case 3: 0 + (3 * Strumline.NOTE_SPACING);
+            case 4: 0 + (4 * Strumline.NOTE_SPACING);
+            case 5: 0 + (5 * Strumline.NOTE_SPACING);
+            case 6: 0 + (6 * Strumline.NOTE_SPACING);
+            case 7: 0 + (7 * Strumline.NOTE_SPACING);
+            case 8: 0 + (8 * Strumline.NOTE_SPACING);
+            default: 0;
         }
     }
 

@@ -6,7 +6,7 @@
   "assets": {
     "note": {
       "assetPath": "shared:notes",
-      "scale": 1.0,
+      "scale": 0.7,
       "data": {
         "left": { "prefix": "purple" },
         "down": { "prefix": "blue" },
@@ -16,7 +16,7 @@
     },
     "noteStrumline": {
       "assetPath": "shared:noteStrumline",
-      "scale": 1.0,
+      "scale": 0.7,
       "offsets": [0, 0],
       "data": {
         "leftStatic": { "prefix": "arrowLEFT" },

@@ -44,11 +44,9 @@ class NoteSpawnFix extends ScriptedModule {
             event.note.holdNoteSprite.noteDirection = event.note.direction;
             event.note.holdNoteSprite.graphicWidth = event.note.holdNoteSprite.graphic.width / 8 * event.note.holdNoteSprite.zoom;
             event.note.holdNoteSprite.updateColorTransform();
-            event.note.holdNoteSprite.graphicHeight = event.note.holdNoteSprite.sustainLength * 0.45 * event.note.holdNoteSprite.parentStrumline?.scrollSpeed;
-            event.note.holdNoteSprite.updateClipping();
-            event.note.holdNoteSprite.updateHitbox();
+            event.note.holdNoteSprite.triggerRedraw();
 
-            event.note.holdNoteSprite.x = event.note.x + (Strumline.STRUMLINE_SIZE / 2) - (event.note.holdNoteSprite.get_width() / 2);
+            event.note.holdNoteSprite.x = event.note.x + (Strumline.STRUMLINE_SIZE / 2); // - (event.note.holdNoteSprite.get_width() / 2)
         }
     }
 

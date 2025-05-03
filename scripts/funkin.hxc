@@ -1,15 +1,16 @@
+import funkin.Paths;
 import funkin.data.animation.AnimationDataUtil;
+import funkin.graphics.FunkinSprite;
+import funkin.play.notes.NoteHoldCover;
 import funkin.play.notes.NoteSprite;
 import funkin.play.notes.Strumline;
 import funkin.play.notes.StrumlineNote;
 import funkin.play.notes.notestyle.ScriptedNoteStyle;
+import funkin.util.assets.FlxAnimationUtil;
 import funkin.util.tools.StringTools;
 
+import funkin.util.Constants;
 import flixel.FlxG;
-import funkin.Paths;
-import funkin.graphics.FunkinSprite;
-import funkin.play.notes.NoteHoldCover;
-import funkin.util.assets.FlxAnimationUtil;
 
 class FunkinNoteStyle extends ScriptedNoteStyle {
     var mkHooks:MultikeyHooks;
@@ -35,6 +36,19 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     override function getStrumlineScale() {
         return super.getStrumlineScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
     }
+
+/*    override function getHoldNoteAssetPath(raw) {
+        if (raw) {
+            var rawPath = Strumline.KEY_COUNT + _data?.assets?.holdNote?.assetPath;
+            return rawPath ?? fallback.getHoldNoteAssetPath(true);
+        }
+
+        // library:path
+        var parts = getHoldNoteAssetPath(true).split(Constants.LIBRARY_SEPARATOR) ?? [];
+        if (parts.length == 0) return null;
+        if (parts.length == 1) return Paths.image(parts[0]);
+        return Paths.image(parts[1], parts[0]);
+    }*/
 
     override function getStrumlineAnimationData(dir) {
         var multiDir = mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir];
@@ -128,7 +142,7 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         return holdCoverFrames;
     }
 
-    override function applyStrumlineOffsets(target:StrumlineNote) {
+/*    override function applyStrumlineOffsets(target:StrumlineNote) {
         super.applyStrumlineOffsets(target);
         target.x -= getXPos(target.direction);
         target.x += Strumline.NOTE_SPACING * target.direction;
@@ -148,5 +162,5 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
             default:
                 return 0;
         }
-    }
+    }*/
 }
