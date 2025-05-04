@@ -18,6 +18,8 @@ import flixel.math.FlxMath;
 
 import Lambda;
 import funkin.Preferences;
+import flixel.tweens.FlxTween;
+import flixel.tweens.FlxEase;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
@@ -65,10 +67,8 @@ class MultikeyManager extends ScriptedModule {
             if (keysCount == Strumline.KEY_COUNT) return;
             Strumline.KEY_COUNT = event.eventData.value?.keyCount;
             setupMultikey(Strumline.KEY_COUNT);
-            refreshStrumline(state.playerStrumline, Strumline.KEY_COUNT);
-            processExtraNotes(state.playerStrumline, Strumline.KEY_COUNT);
-            refreshStrumline(state.opponentStrumline, Strumline.KEY_COUNT);
-            processExtraNotes(state.opponentStrumline, Strumline.KEY_COUNT);
+            refreshStrumline(state?.playerStrumline, Strumline.KEY_COUNT);
+            refreshStrumline(state?.opponentStrumline, Strumline.KEY_COUNT);
             initPreciseInputs();
         }
     }
@@ -76,7 +76,7 @@ class MultikeyManager extends ScriptedModule {
     override function onSongLoaded(event:SongLoadScriptEvent) {
         if (PlayState.instance == null && Strumline.KEY_COUNT == 4) return;
         state = PlayState.instance;
-        Strumline.NOTE_SPLASH_CAP = 0;
+        Strumline.NOTE_SPLASH_CAP = 16;
         processExtraNotes(state.playerStrumline, Strumline.KEY_COUNT);
         processExtraNotes(state.opponentStrumline, Strumline.KEY_COUNT);
     }
@@ -223,6 +223,7 @@ class MultikeyManager extends ScriptedModule {
                 notesArray[i].direction = mkHooks.NOTE_DIRECTIONS[totalKeys][i];
                 notesArray[i].x = strumline.x;
                 notesArray[i].x += getXPos(Strumline.DIRECTIONS[i]);
+                notesArray[i].x -= Strumline.NUDGE;
                 strumline.noteStyle.applyStrumlineOffsets(notesArray[i]);
                 //trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == state.playerStrumline ? " (Player)" : " (Opponent)"));
             }
@@ -230,17 +231,55 @@ class MultikeyManager extends ScriptedModule {
     }
 
     function refreshStrumline(strumline:Strumline, totalKeys:Int) {
-        // TODO: Do some animation while changing them and place them in the middle
+        if (strumline == null || strumline.strumlineNotes == null || strumline.strumlineNotes.members.length == 0) {
+            createNewNotes(strumline, totalKeys);
+            return;
+        }
+
+        // Animate the old notes out
+        var oldNotesRemaining = strumline.strumlineNotes.members.length;
+        var capturedStrumline = strumline;
+        var capturedTotalKeys = totalKeys;
+
+        for (note in strumline.strumlineNotes.members) {
+            var jumpHeight = Preferences.downscroll ? -10 : 10;
+
+            FlxTween.tween(note, {y: note.y + jumpHeight, alpha: 0}, 0.1, {
+                ease: FlxEase.circIn,
+                onComplete: tween -> {
+                    oldNotesRemaining--;
+
+                    // Once all old notes are gone, create the new ones
+                    if (oldNotesRemaining <= 0) createNewNotes(capturedStrumline, capturedTotalKeys);
+                }
+            });
+        }
+    }
+
+    function createNewNotes(strumline:Strumline, totalKeys:Int) {
+        var capturedStrumline = strumline;
+        var capturedTotalKeys = totalKeys;
+
         strumline.strumlineNotes.clear();
+
         strumline.background.scale.x = Std.int(strumline.width / 2 + Strumline.BACKGROUND_PAD);
         strumline.background.x = strumline.x - Strumline.BACKGROUND_PAD;
         strumline.background.updateHitbox();
+
         for (i in 0...totalKeys) {
             var child:StrumlineNote = new StrumlineNote(strumline.noteStyle, strumline.isPlayer, Strumline.DIRECTIONS[i]);
             child.x = getXPos(Strumline.DIRECTIONS[i]);
             child.x -= Strumline.INITIAL_OFFSET;
             strumline.noteStyle.applyStrumlineOffsets(child);
+
+            var jumpHeight = Preferences.downscroll ? -10 : 10;
+            child.alpha = 0;
+
             strumline.strumlineNotes.add(child);
+            processExtraNotes(capturedStrumline, capturedTotalKeys);
+            FlxTween.tween(child, {y: child.y + jumpHeight, alpha: 1}, 0.2, {
+                ease: FlxEase.circOut,
+            });
         }
     }
 

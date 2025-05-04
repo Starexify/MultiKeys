@@ -88,4 +88,11 @@ class NoteSpawnFix extends ScriptedModule {
         state.playerStrumline.applyNoteData(playerNoteData);
         state.opponentStrumline.applyNoteData(opponentNoteData);
     }
+
+    // Cleanup
+    override function onSubStateCloseBegin(event:SubStateScriptEvent) { if (Std.isOfType(event.targetState, PlayState)) state = null; }
+
+    override function onSongEnd(event:ScriptEvent) { state = null; }
+
+    override function onDestroy(event:ScriptEvent) { state = null; }
 }

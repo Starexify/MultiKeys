@@ -37,6 +37,8 @@ class MultikeyCompat extends ScriptedModule {
         if (Std.isOfType(event.targetState, ChartEditorState)) {
             chartEditor = event.targetState;
             updateChartEditor(chartEditor, DEFAULT_KEY_COUNT);
+        } else {
+            chartEditor = null;
         }
     }
 
@@ -128,7 +130,7 @@ class MultikeyCompat extends ScriptedModule {
         }
     }
 
-    public function setChartEditorKeyCount(chartEditor:ChartEditorState) {
+    function setChartEditorKeyCount(chartEditor:ChartEditorState) {
         var currentEvent:ChartEditorEventSprite = null;
         for (eventSprite in chartEditor.renderedEvents) {
             if (FlxG.overlap(chartEditor.gridPlayhead, eventSprite)) {
