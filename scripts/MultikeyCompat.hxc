@@ -3,11 +3,15 @@ import funkin.graphics.FunkinSprite;
 import funkin.modding.module.ScriptedModule;
 import funkin.modding.events.ScriptEvent;
 import funkin.play.notes.Strumline;
+import funkin.play.notes.notestyle.NoteStyle;
 import funkin.ui.debug.charting.ChartEditorState;
 import funkin.ui.debug.charting.components.ChartEditorEventSprite;
+import funkin.ui.debug.charting.components.ChartEditorNoteSprite;
 import funkin.ui.debug.charting.handlers.ChartEditorThemeHandler;
 import funkin.ui.debug.charting.handlers.ChartEditorToolboxHandler;
+import funkin.util.Constants;
 import funkin.util.FileWriteMode;
+import funkin.util.tools.StringTools;
 
 import flixel.FlxG;
 
@@ -19,16 +23,15 @@ import haxe.ui.containers.Frame;
 import haxe.ui.containers.Grid;
 import haxe.ui.containers.HBox;
 import haxe.ui.events.UIEvent;
-import funkin.util.Constants;
-import funkin.util.tools.StringTools;
-import funkin.play.notes.notestyle.NoteStyle;
-import funkin.ui.debug.charting.components.ChartEditorNoteSprite;
 
 class MultikeyCompat extends ScriptedModule {
     var mkHooks:MultikeyHooks;
     var chartEditor:ChartEditorState;
 
     var box:Null<Box>;
+
+    var passedEvent:ChartEditorEventSprite;
+    var lastKeyCount:Int = 4;
 
     var addedComponent:Bool;
     var addedKeysComponent:Bool;
@@ -137,37 +140,40 @@ class MultikeyCompat extends ScriptedModule {
 
             for (note in chartEditor.renderedNotes.members) {
                 if (note.noteData == null) return;
-                var baseAnimationName:String = 'tap';
                 addNoteStyleAnimations(note, note.noteData.data, note.fetchNoteStyle(note.noteStyle));
+                var baseAnimationName:String = 'tap';
 
-                var dirName:String = note.overrideData != null ? mkHooks.NOTE_COLORS[note.overrideData % ChartEditorState.STRUMLINE_SIZE] : mkHooks.NOTE_COLORS[note.noteData.data % ChartEditorState.STRUMLINE_SIZE];
+                var dirName:String = note.overrideData != null ? mkHooks.NOTE_COLORS[note.overrideData] : mkHooks.NOTE_COLORS[note.noteData.data];
                 var animationName:String = "" + baseAnimationName + dirName + StringTools.toTitleCase(note.noteStyle);
                 note.animation.play(animationName);
+                chartEditor.gridGhostNote.animation.play(animationName);
                 note.setGraphicSize(ChartEditorState.GRID_SIZE, 0);
                 //note.updateHitbox();
                 var bruhStyle = note.fetchNoteStyle(note.noteStyle);
                 note.antialiasing = !bruhStyle._data?.assets?.note?.isPixel ?? true;
-                trace(StringTools.toTitleCase(mkHooks.NOTE_COLORS[note.noteData.data % ChartEditorState.STRUMLINE_SIZE]));
             }
         }
     }
 
     function setChartEditorKeyCount(chartEditor:ChartEditorState) {
-        var currentEvent:ChartEditorEventSprite = null;
-        for (eventSprite in chartEditor.renderedEvents) {
+        for (eventSprite in chartEditor.renderedEvents)
             if (FlxG.overlap(chartEditor.gridPlayhead, eventSprite)) {
-                currentEvent = eventSprite;
+                passedEvent = eventSprite;
                 break;
             }
-        }
 
-        if (currentEvent != null && currentEvent.eventData != null && currentEvent.eventData.eventKind == "KeyCountEvent" && currentEvent.eventData.value != null) {
-            updateChartEditor(chartEditor, currentEvent.eventData.value.keyCount);
+        if (passedEvent != null && passedEvent.eventData != null && passedEvent.eventData.eventKind == "KeyCountEvent" && passedEvent.eventData.value != null) {
+            var currentKeyCount = passedEvent.eventData.value?.keyCount;
+            if (currentKeyCount != lastKeyCount) {
+                lastKeyCount = currentKeyCount;
+                updateChartEditor(chartEditor, currentKeyCount);
+            }
         }
     }
 
     // Updates the Chart Editor based on a custom Key Count
     function updateChartEditor(chartEditor:ChartEditorState, keyCount:Int) {
+        trace("[MultiKeys] Changing Chart Editor Key Count to: " + keyCount);
         ChartEditorState.STRUMLINE_SIZE = FNFLegacyImporter.STRUMLINE_SIZE = Strumline.KEY_COUNT = keyCount;
         ChartEditorThemeHandler.TOTAL_COLUMN_COUNT = ChartEditorState.STRUMLINE_SIZE * 2 + 1;
         ChartEditorState.NOTE_PREVIEW_X_POS = -(keyCount * ChartEditorState.GRID_SIZE) + 480;
@@ -190,11 +196,11 @@ class MultikeyCompat extends ScriptedModule {
         chartEditor.buttonSelectEvent.x = chartEditor.buttonSelectPlayer.x + chartEditor.buttonSelectPlayer.width;
         chartEditor.buttonSelectPlayer.findComponent(null, Label, false).wordWrap = chartEditor.buttonSelectOpponent.findComponent(null, Label, false).wordWrap = false;
 
-/*        chartEditor.renderedHoldNotes.clear();
-        chartEditor.renderedNotes.clear();
-        chartEditor.renderedEvents.clear();
-        chartEditor.renderedSelectionSquares.clear();
-        chartEditor.buildNoteGroup();
+        //chartEditor.renderedHoldNotes.clear();
+        //chartEditor.renderedNotes.clear();
+/*        chartEditor.renderedEvents.clear();
+        chartEditor.renderedSelectionSquares.clear();*/
+/*        chartEditor.buildNoteGroup();
         chartEditor.noteDisplayDirty = true;*/
         chartEditor.renderedNotes.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
         chartEditor.renderedHoldNotes.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
@@ -207,10 +213,11 @@ class MultikeyCompat extends ScriptedModule {
 
     function addNoteStyleAnimations(note:ChartEditorNoteSprite, dir:Int, noteStyle:NoteStyle):Void {
         if (noteStyle.id != Constants.DEFAULT_NOTE_STYLE) return;
-        var prefix:String = StringTools.toTitleCase(noteStyle.id);
-        var suffix:String = StringTools.toTitleCase(noteStyle.id);
-
+        //var dirName:String = StringTools.toTitleCase(mkHooks.DIRECTION_NAMES[dir]);
+        var styleID:String = StringTools.toTitleCase(noteStyle.id);
         var anim = noteStyle.fetchNoteAnimationData(dir);
-        note.animation.addByPrefix("tap" + mkHooks.NOTE_COLORS[dir] + suffix, prefix + anim.prefix, anim.frameRate, anim.looped, anim.flipX, anim.flipY);
+
+        //note.animation.addByPrefix("tap" + dirName + styleID, styleID + anim.prefix, anim.frameRate, anim.looped, anim.flipX, anim.flipY);
+        note.animation.addByPrefix("tap" + mkHooks.NOTE_COLORS[dir] + styleID, styleID + anim.prefix, anim.frameRate, anim.looped, anim.flipX, anim.flipY);
     }
 }
