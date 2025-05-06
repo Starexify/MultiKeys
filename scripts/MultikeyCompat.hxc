@@ -36,6 +36,8 @@ class MultikeyCompat extends ScriptedModule {
     var addedComponent:Bool;
     var addedKeysComponent:Bool;
 
+    var playbarKeys:Label;
+
     var DEFAULT_KEY_COUNT:Int = 4;
 
     function new() {
@@ -98,7 +100,7 @@ class MultikeyCompat extends ScriptedModule {
                     var rule = new VerticalRule();
                     rule.percentHeight = 80;
 
-                    var playbarKeys = new Label();
+                    playbarKeys = new Label();
                     playbarKeys.id = "playbarKeys";
                     playbarKeys.styleNames = "playbarStatus";
                     playbarKeys.verticalAlign = "center";
@@ -140,18 +142,29 @@ class MultikeyCompat extends ScriptedModule {
 
             for (note in chartEditor.renderedNotes.members) {
                 if (note.noteData == null) return;
-                addNoteStyleAnimations(note, note.noteData.data, note.fetchNoteStyle(note.noteStyle));
-                var baseAnimationName:String = 'tap';
-
-                var dirName:String = note.overrideData != null ? mkHooks.NOTE_COLORS[note.overrideData] : mkHooks.NOTE_COLORS[note.noteData.data];
-                var animationName:String = "" + baseAnimationName + dirName + StringTools.toTitleCase(note.noteStyle);
+                if (note.noteData.data < ChartEditorState.STRUMLINE_SIZE) addNoteStyleAnimations(note, note.noteData.data, note.fetchNoteStyle(note.noteStyle));
+                var dirName:String = note.overrideData != null ? mkHooks.NOTE_COLORS[note.overrideData % ChartEditorState.STRUMLINE_SIZE] : mkHooks.NOTE_COLORS[note.noteData.data % ChartEditorState.STRUMLINE_SIZE];
+                var animationName:String = "tap" + dirName + StringTools.toTitleCase(note.noteStyle);
                 note.animation.play(animationName);
-                chartEditor.gridGhostNote.animation.play(animationName);
-                note.setGraphicSize(ChartEditorState.GRID_SIZE, 0);
                 //note.updateHitbox();
                 var bruhStyle = note.fetchNoteStyle(note.noteStyle);
                 note.antialiasing = !bruhStyle._data?.assets?.note?.isPixel ?? true;
             }
+
+            if (chartEditor.gridGhostNote.noteData == null) return;
+            addNoteStyleAnimations(chartEditor.gridGhostNote, chartEditor.gridGhostNote.noteData.data, chartEditor.gridGhostNote.fetchNoteStyle(chartEditor.gridGhostNote.noteStyle));
+
+            var dirNam:String = chartEditor.gridGhostNote.overrideData != null ? mkHooks.NOTE_COLORS[chartEditor.gridGhostNote.overrideData % ChartEditorState.STRUMLINE_SIZE] : mkHooks.NOTE_COLORS[chartEditor.gridGhostNote.noteData.data % ChartEditorState.STRUMLINE_SIZE];
+            var ghostAnimName:String = "tap" + dirNam + StringTools.toTitleCase(chartEditor.gridGhostNote?.noteStyle);
+            chartEditor.gridGhostNote.animation.play(ghostAnimName);
+            if (chartEditor.dragTargetNote != null) {
+                addNoteStyleAnimations(chartEditor.dragTargetNote, chartEditor.dragTargetNote.noteData.data, chartEditor.dragTargetNote.fetchNoteStyle(chartEditor.dragTargetNote.noteStyle));
+                var dirName2:String = chartEditor.dragTargetNote.overrideData != null ? mkHooks.NOTE_COLORS[chartEditor.dragTargetNote.overrideData % ChartEditorState.STRUMLINE_SIZE] : mkHooks.NOTE_COLORS[chartEditor.dragTargetNote.noteData.data % ChartEditorState.STRUMLINE_SIZE];
+                var dragAnimName:String = "tap" + dirName2 + StringTools.toTitleCase(chartEditor.dragTargetNote.noteStyle);
+                chartEditor.dragTargetNote.animation.play(dragAnimName);
+            }
+            var bruhStyle = chartEditor.gridGhostNote.fetchNoteStyle(chartEditor.gridGhostNote.noteStyle);
+            chartEditor.gridGhostNote.antialiasing = !bruhStyle._data?.assets?.note?.isPixel ?? true;
         }
     }
 
@@ -173,7 +186,8 @@ class MultikeyCompat extends ScriptedModule {
 
     // Updates the Chart Editor based on a custom Key Count
     function updateChartEditor(chartEditor:ChartEditorState, keyCount:Int) {
-        trace("[MultiKeys] Changing Chart Editor Key Count to: " + keyCount);
+        //trace("[MultiKeys] Changing Chart Editor Key Count to: " + keyCount);
+        if (playbarKeys != null) playbarKeys.text = "Keys: " + keyCount;
         ChartEditorState.STRUMLINE_SIZE = FNFLegacyImporter.STRUMLINE_SIZE = Strumline.KEY_COUNT = keyCount;
         ChartEditorThemeHandler.TOTAL_COLUMN_COUNT = ChartEditorState.STRUMLINE_SIZE * 2 + 1;
         ChartEditorState.NOTE_PREVIEW_X_POS = -(keyCount * ChartEditorState.GRID_SIZE) + 480;
