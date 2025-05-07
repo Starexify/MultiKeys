@@ -1,7 +1,9 @@
 import funkin.data.animation.AnimationDataUtil;
+import funkin.play.notes.NoteHoldCover;
 import funkin.play.notes.NoteSprite;
 import funkin.play.notes.Strumline;
 import funkin.play.notes.notestyle.ScriptedNoteStyle;
+import funkin.util.tools.StringTools;
 
 class FunkinNoteStyle extends ScriptedNoteStyle {
     var mkHooks:MultikeyHooks;
@@ -32,8 +34,36 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     }
 
     override function buildNoteAnimations(target:NoteSprite) {
-        for (i in 0...new MultikeyHooks().NOTE_COLORS.length)
-            target.animation.addByPrefix(new MultikeyHooks().NOTE_COLORS[i] + "Scroll", mkHooks.NOTE_COLORS[i]);
+        for (i in 0...mkHooks.NOTE_COLORS.length)
+            target.animation.addByPrefix(mkHooks.NOTE_COLORS[i] + "Scroll", mkHooks.NOTE_COLORS[i]);
+    }
+
+    override function buildHoldCoverFrameForDirection(direction) {
+        //var atlas = Paths.getSparrowAtlas(holdCoverAssetPath, getAssetLibrary(getHoldCoverDirectionAssetPath(direction, true)));
+        var atlas = Paths.getSparrowAtlas("holdCover" + StringTools.toTitleCase(mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][direction]));
+        atlas.parent.persist = true;
+        return atlas;
+    }
+
+    override function buildHoldCoverSprite(target:NoteHoldCover) {
+        // NoteHoldCover has "glow" and "sparks". Right now it only implements "glow"
+        // but "sparks" I believe is meant to be used for the ending of the hold note
+        var glowAtlas = buildHoldCoverFrames(false);
+        if (glowAtlas == null) throw "Could not load spritesheet for note style: " + id;
+        target.glow.frames = glowAtlas;
+
+        target.antialiasing = !(_data.assets.holdNoteCover?.isPixel ?? false);
+        target.glow.antialiasing = !(_data.assets.holdNoteCover?.isPixel ?? false);
+        target.scale.set(getHoldCoverScale(), getHoldCoverScale());
+        target.updateHitbox();
+        target.glow.updateHitbox();
+
+        for (direction in 0...9) {
+            var color = StringTools.toTitleCase(mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][direction]);
+            target.glow.animation.addByPrefix("holdCoverStart" + color, "holdCoverStart" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT, false);
+            target.glow.animation.addByPrefix("holdCover" + color, "holdCover" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT);
+            target.glow.animation.addByPrefix("holdCoverEnd" + color, "holdCoverEnd" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT, false);
+        }
     }
 
     // Enabling
@@ -48,6 +78,10 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     }
 
     // Scaling
+    function getHoldCoverScale() {
+        return _data.assets.holdNoteCover?.scale ?? 1.0 * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+    }
+
     override function fetchHoldNoteScale() {
         return super.fetchHoldNoteScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
     }
