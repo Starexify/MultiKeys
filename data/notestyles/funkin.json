@@ -17,7 +17,7 @@
     "noteStrumline": {
       "assetPath": "shared:noteStrumline",
       "scale": 0.7,
-      "offsets": [0, 0],
+      "offsets": [25, 25],
       "data": {
         "leftStatic": { "prefix": "arrowLEFT" },
         "leftPress": { "prefix": "purple press" },

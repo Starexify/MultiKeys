@@ -1,7 +1,6 @@
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.play.PlayState;
-import funkin.play.notes.NoteSplash;
 import funkin.play.notes.Strumline;
 
 import flixel.FlxG;
@@ -105,7 +104,6 @@ class MultikeyNoteHandler extends ScriptedModule {
             splash.playAnimation("splash" + mkHooks.NOTE_COLORS[direction] + variant);
             if (splash.animation.curAnim == null) return;
             splash.animation.curAnim.frameRate = strumline.noteStyle.getSplashFramerate() + FlxG.random.int(-strumline.noteStyle.getSplashFramerateVariance(), strumline.noteStyle.getSplashFramerateVariance());
-            splash.animation.onFinish.add(animName -> onAnimationFinished(splash, animName));
             splash.offset.set(splash.width * 0.3, splash.height * 0.3);
 
             splash.x = strumline.x;
@@ -115,10 +113,6 @@ class MultikeyNoteHandler extends ScriptedModule {
             splash.y = strumline.y;
             splash.y += strumline.noteStyle.getSplashOffsets()[1] * splash.scale.y;
         }
-    }
-
-    function onAnimationFinished(splash:NoteSplash, animationName:String):Void {
-        splash.kill();
     }
 
     // Cleanup

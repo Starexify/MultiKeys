@@ -50,7 +50,10 @@ class MultikeyManager extends ScriptedModule {
     }
 
     function onStateChange(state) {
-        if (Std.isOfType(state, PlayState)) setupMultikey(Strumline.KEY_COUNT);
+        if (Std.isOfType(state, PlayState)) {
+            Strumline.KEY_COUNT = 4;
+            setupMultikey(Strumline.KEY_COUNT);
+        }
     }
 
     function setupMultikey(keyCount:Int) {
@@ -61,6 +64,14 @@ class MultikeyManager extends ScriptedModule {
         NoteSprite.DIRECTION_COLORS = mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT];
     }
 
+    override function onSongLoaded(event:SongLoadScriptEvent) {
+        if (PlayState.instance == null) return;
+
+        state = PlayState.instance;
+        processExtraNotes(state.playerStrumline, Strumline.KEY_COUNT);
+        processExtraNotes(state.opponentStrumline, Strumline.KEY_COUNT);
+    }
+
     override function onSongEvent(event:SongEventScriptEvent) {
         if (event.eventData.eventKind == "KeyCountEvent") {
             keysCount = event.eventData.value?.keyCount;
@@ -69,17 +80,9 @@ class MultikeyManager extends ScriptedModule {
             setupMultikey(Strumline.KEY_COUNT);
             refreshStrumline(state?.playerStrumline, Strumline.KEY_COUNT);
             refreshStrumline(state?.opponentStrumline, Strumline.KEY_COUNT);
-            initPreciseInputs();
+            if (keysCount != 4) initPreciseInputs();
+            else recoverPreciseInputs();
         }
-    }
-
-    override function onSongLoaded(event:SongLoadScriptEvent) {
-        if (PlayState.instance == null) return;
-
-        state = PlayState.instance;
-        //Strumline.NOTE_SPLASH_CAP = 16;
-        processExtraNotes(state.playerStrumline, Strumline.KEY_COUNT);
-        processExtraNotes(state.opponentStrumline, Strumline.KEY_COUNT);
     }
 
     override function onCountdownStart(event:CountdownScriptEvent) {
@@ -172,6 +175,15 @@ class MultikeyManager extends ScriptedModule {
         initializeKeys(inputManager);
     }
 
+    function recoverPreciseInputs() {
+        var inputManager = PreciseInputManager.instance;
+        inputManager.clearKeys();
+        inputManager.onInputPressed.removeAll();
+        inputManager.onInputReleased.removeAll();
+        inputManager.onInputPressed.add(state.onKeyPress);
+        inputManager.onInputReleased.add(state.onKeyRelease);
+    }
+
     function initializeKeys(inputManager:PreciseInputManager) {
         var keySets = multikeysOptions.controls[Strumline.KEY_COUNT - 1];
         var i = 0;
@@ -225,7 +237,6 @@ class MultikeyManager extends ScriptedModule {
                 notesArray[i].x = strumline.x;
                 notesArray[i].x += Strumline.DIRECTIONS[i] * Strumline.NOTE_SPACING;
                 notesArray[i].x -= Strumline.NUDGE;
-                strumline.noteStyle.applyStrumlineOffsets(notesArray[i]);
                 //trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == state.playerStrumline ? " (Player)" : " (Opponent)"));
             }
         }
@@ -264,7 +275,7 @@ class MultikeyManager extends ScriptedModule {
         strumline.strumlineNotes.clear();
 
         strumline.background.scale.x = Std.int(strumline.width / 2 + Strumline.BACKGROUND_PAD);
-        strumline.background.x = strumline.x - Strumline.BACKGROUND_PAD;
+        strumline.background.x = strumline.x - Strumline.BACKGROUND_PAD * mkHooks.NOTE_SCALES[totalKeys];
         strumline.background.updateHitbox();
 
         for (i in 0...totalKeys) {
@@ -273,7 +284,8 @@ class MultikeyManager extends ScriptedModule {
             child.x -= Strumline.INITIAL_OFFSET;
             strumline.noteStyle.applyStrumlineOffsets(child);
 
-            var jumpHeight = Preferences.downscroll ? -10 : 10;
+            //var jumpHeight = Preferences.downscroll ? -10 : 10;
+            var jumpHeight = 0;
             child.alpha = 0;
 
             strumline.strumlineNotes.add(child);
