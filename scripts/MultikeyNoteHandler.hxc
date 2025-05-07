@@ -22,6 +22,7 @@ class MultikeyNoteHandler extends ScriptedModule {
     override function onSongLoaded(event:SongLoadScriptEvent) {
         if (PlayState.instance == null || Strumline.KEY_COUNT == 4) return;
         state = PlayState.instance;
+        Strumline.NOTE_SPLASH_CAP = Strumline.KEY_COUNT + 2;
     }
 
     override function onUpdate(event:UpdateScriptEvent) {
@@ -42,16 +43,15 @@ class MultikeyNoteHandler extends ScriptedModule {
         }
     }
 
-    override function onNoteHit(event:NoteScriptEvent) {
+    override function onNoteHit(event:HitNoteScriptEvent) {
         if (event.eventCanceled) return;
         if (state == null || Strumline.KEY_COUNT == 4) return;
-
-        var characterID = Math.floor(event.note.noteData.data / Strumline.KEY_COUNT);
-        if (characterID == 0) if (event.judgement == "sick") //playNoteSplash(state.playerStrumline, event.note.noteData.data % Strumline.KEY_COUNT);
+        if (event.doesNotesplash) playNoteSplash(state.playerStrumline, event.note.noteData.data % Strumline.KEY_COUNT);
 
         if (!disableCharacterAnims) {
-            var singDir = mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.data];
-            switch (characterID) {
+            var strumIndex = event.note.noteData.getStrumlineIndex(Strumline.KEY_COUNT);
+            var singDir = mkHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.data];
+            switch (strumIndex) {
                 case 0:
                     state.currentStage.getBoyfriend().playSingAnimation(singDir, false);
                     state.currentStage.getBoyfriend().holdTimer = 0;
@@ -61,17 +61,15 @@ class MultikeyNoteHandler extends ScriptedModule {
                 case 2:
             }
         }
-
     }
 
     override function onNoteMiss(event:NoteScriptEvent) {
         if (event.eventCanceled) return;
         if (state == null || Strumline.KEY_COUNT == 4) return;
-
         if (!disableCharacterAnims) {
-            var characterID = Math.floor(event.note.noteData.data / Strumline.KEY_COUNT);
-            var singDir = mkHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.getDirection()];
-            switch (characterID) {
+            var strumIndex = event.note.noteData.getStrumlineIndex(Strumline.KEY_COUNT);
+            var singDir = mkHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.data];
+            switch (strumIndex) {
                 case 0:
                     state.currentStage.getBoyfriend().playSingAnimation(singDir, true);
                 case 1:
@@ -91,37 +89,36 @@ class MultikeyNoteHandler extends ScriptedModule {
         }
     }
 
-    function playNoteSplash(strumline:Strumline, direction) {
+    function playNoteSplash(strumline:Strumline, dir) {
+        if (!strumline.showNotesplash) return;
         var splash = strumline.constructNoteSplash();
         if (splash != null) {
             if (!splash.animation.exists("splash1white")) {
                 for (i in 0...mkHooks.NOTE_COLORS.length) {
-                    splash.animation.addByPrefix("splash1" + mkHooks.NOTE_COLORS[i], "note impact 1 " + mkHooks.NOTE_COLORS[i] + "0", NoteSplash.splashFramerate, false, false, false);
-                    splash.animation.addByPrefix("splash2" + mkHooks.NOTE_COLORS[i], "note impact 2 " + mkHooks.NOTE_COLORS[i] + "0", NoteSplash.splashFramerate, false, false, false);
+                    splash.animation.addByPrefix("splash" + mkHooks.NOTE_COLORS[i] + "1", "note impact 1 " + mkHooks.NOTE_COLORS[i] + "0", strumline.noteStyle.getSplashFramerate(), false, false, false);
+                    splash.animation.addByPrefix("splash" + mkHooks.NOTE_COLORS[i] + "2", "note impact 2 " + mkHooks.NOTE_COLORS[i] + "0", strumline.noteStyle.getSplashFramerate(), false, false, false);
                 }
             }
-            var dir = mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][direction];
+            var direction = mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir];
+
             var variant = FlxG.random.int(1, 2);
-            splash.playAnimation("splash" + variant + mkHooks.NOTE_COLORS[dir]);
-            if (splash.animation._curAnim != null) {
-                splash.animation._curAnim.set_frameRate(NoteSplash.splashFramerate + FlxG.random.int(-NoteSplash.splashFramerateVariance, NoteSplash.splashFramerateVariance));
-                var this1 = splash.offset;
-                var x = splash.get_width() * 0.3;
-                var y = splash.get_height() * 0.3;
-                if (y == null) y = 0;
-                if (x == null) x = 0;
+            splash.playAnimation("splash" + mkHooks.NOTE_COLORS[direction] + variant);
+            if (splash.animation.curAnim == null) return;
+            splash.animation.curAnim.frameRate = strumline.noteStyle.getSplashFramerate() + FlxG.random.int(-strumline.noteStyle.getSplashFramerateVariance(), strumline.noteStyle.getSplashFramerateVariance());
+            splash.animation.onFinish.add(animName -> onAnimationFinished(splash, animName));
+            splash.offset.set(splash.width * 0.3, splash.height * 0.3);
 
-                this1.set_x(x);
-                this1.set_y(y);
-            }
+            splash.x = strumline.x;
+            splash.x += dir * Strumline.NOTE_SPACING;
+            splash.x += strumline.noteStyle.getSplashOffsets()[0] * splash.scale.x;
 
-            splash.set_x(strumline.x);
-            splash.set_x(splash.x + Strumline.NOTE_SPACING * direction);
-            splash.set_x(splash.x + Strumline.INITIAL_OFFSET);
-            splash.set_y(strumline.y);
-            splash.set_y(splash.y - Strumline.INITIAL_OFFSET);
-            splash.set_y(splash.y);
+            splash.y = strumline.y;
+            splash.y += strumline.noteStyle.getSplashOffsets()[1] * splash.scale.y;
         }
+    }
+
+    function onAnimationFinished(splash:NoteSplash, animationName:String):Void {
+        splash.kill();
     }
 
     // Cleanup

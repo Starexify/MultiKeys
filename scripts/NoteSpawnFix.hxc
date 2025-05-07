@@ -67,7 +67,7 @@ class NoteSpawnFix extends ScriptedModule {
     }
 
     function reapplyNoteData() {
-        state.playerStrumline.clean();
+        if (state != null) state.playerStrumline.clean();
         state.opponentStrumline.clean();
 
         // Reset the notes on each strumline.

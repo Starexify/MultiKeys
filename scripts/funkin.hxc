@@ -4,12 +4,10 @@ import funkin.graphics.FunkinSprite;
 import funkin.play.notes.NoteHoldCover;
 import funkin.play.notes.NoteSprite;
 import funkin.play.notes.Strumline;
-import funkin.play.notes.StrumlineNote;
 import funkin.play.notes.notestyle.ScriptedNoteStyle;
 import funkin.util.assets.FlxAnimationUtil;
 import funkin.util.tools.StringTools;
 
-import funkin.util.Constants;
 import flixel.FlxG;
 
 class FunkinNoteStyle extends ScriptedNoteStyle {
@@ -32,13 +30,6 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
             AnimationDataUtil.toNamed({prefix: confirmName}, "confirm"),
             AnimationDataUtil.toNamed({prefix: confirmName}, "confirm-hold")
         ];
-    }
-
-    override function fetchSplashAnimationData(dir) {
-        var splash1 = "note impact 1 " + mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir] + "0";
-        var splash2 = "note impact 2 " + mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir] + "0";
-
-        return AnimationDataUtil.toNamedArray([{prefix: splash1}, {prefix: splash2}], "splashLEFT");
     }
 
     override function fetchHoldCoverAnimationData(dir) {
@@ -112,8 +103,14 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         return holdCoverFrames;
     }
 
+    // Enabling
     override function isHoldNoteCoverEnabled() {
         if (!super.isHoldNoteCoverEnabled()) return false;
+        return Strumline.KEY_COUNT == 4;
+    }
+
+    override function isNoteSplashEnabled() {
+        if (!super.isNoteSplashEnabled()) return false;
         return Strumline.KEY_COUNT == 4;
     }
 
@@ -129,21 +126,4 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     override function getStrumlineScale() {
         return super.getStrumlineScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
     }
-
-/*    override function applyStrumlineOffsets(target:StrumlineNote) {
-        super.applyStrumlineOffsets(target);
-        target.x -= getXPos(target.direction);
-        target.x += Strumline.NOTE_SPACING * target.direction;
-        target.x += Strumline.NUDGE;
-    }
-
-    function getXPos(direction) {
-        return switch (direction) {
-            case 0: 0;
-            case 1: 1 * Strumline.NOTE_SPACING;
-            case 2: 2 * Strumline.NOTE_SPACING;
-            case 3: 3 * Strumline.NOTE_SPACING;
-            default: 0;
-        }
-    }*/
 }

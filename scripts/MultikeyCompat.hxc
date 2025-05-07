@@ -152,13 +152,12 @@ class MultikeyCompat extends ScriptedModule {
             }
 
             if (chartEditor.gridGhostNote.noteData == null) return;
-            addNoteStyleAnimations(chartEditor.gridGhostNote, chartEditor.gridGhostNote.noteData.data, chartEditor.gridGhostNote.fetchNoteStyle(chartEditor.gridGhostNote.noteStyle));
 
             var dirNam:String = chartEditor.gridGhostNote.overrideData != null ? mkHooks.NOTE_COLORS[chartEditor.gridGhostNote.overrideData % ChartEditorState.STRUMLINE_SIZE] : mkHooks.NOTE_COLORS[chartEditor.gridGhostNote.noteData.data % ChartEditorState.STRUMLINE_SIZE];
             var ghostAnimName:String = "tap" + dirNam + StringTools.toTitleCase(chartEditor.gridGhostNote?.noteStyle);
             chartEditor.gridGhostNote.animation.play(ghostAnimName);
             if (chartEditor.dragTargetNote != null) {
-                addNoteStyleAnimations(chartEditor.dragTargetNote, chartEditor.dragTargetNote.noteData.data, chartEditor.dragTargetNote.fetchNoteStyle(chartEditor.dragTargetNote.noteStyle));
+                if (chartEditor.dragTargetNote.noteData.data < ChartEditorState.STRUMLINE_SIZE) addNoteStyleAnimations(chartEditor.dragTargetNote, chartEditor.dragTargetNote.noteData.data, chartEditor.dragTargetNote.fetchNoteStyle(chartEditor.dragTargetNote.noteStyle));
                 var dirName2:String = chartEditor.dragTargetNote.overrideData != null ? mkHooks.NOTE_COLORS[chartEditor.dragTargetNote.overrideData % ChartEditorState.STRUMLINE_SIZE] : mkHooks.NOTE_COLORS[chartEditor.dragTargetNote.noteData.data % ChartEditorState.STRUMLINE_SIZE];
                 var dragAnimName:String = "tap" + dirName2 + StringTools.toTitleCase(chartEditor.dragTargetNote.noteStyle);
                 chartEditor.dragTargetNote.animation.play(dragAnimName);
@@ -197,7 +196,6 @@ class MultikeyCompat extends ScriptedModule {
         chartEditor.measureTicks.x = chartEditor.gridTiledSprite.x - ChartEditorState.GRID_SIZE;
 
         chartEditor.gridTiledSprite.width = chartEditor.gridBitmap.width;
-
         chartEditor.gridPlayhead.remove(chartEditor.gridPlayhead.members[0]);
         var playheadWidth = ChartEditorState.GRID_SIZE * (ChartEditorState.STRUMLINE_SIZE * 2 + 1) + Std.int(ChartEditorState.GRID_SIZE) * 2;
         var playheadSprite = new FunkinSprite().makeSolidColor(playheadWidth, ChartEditorState.PLAYHEAD_HEIGHT, ChartEditorState.PLAYHEAD_COLOR);
@@ -221,8 +219,17 @@ class MultikeyCompat extends ScriptedModule {
         chartEditor.renderedEvents.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
         chartEditor.renderedSelectionSquares.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
 
+        if (chartEditor.gridGhostNote.noteData != null) if (chartEditor.gridGhostNote.noteData.data < ChartEditorState.STRUMLINE_SIZE)
+            addNoteStyleAnimations(chartEditor.gridGhostNote, chartEditor.gridGhostNote.noteData.data, chartEditor.gridGhostNote.fetchNoteStyle(chartEditor.gridGhostNote.noteStyle));
+        for (note in chartEditor.renderedNotes.members) {
+            if (note.noteData == null) return;
+            if (note.noteData.data < ChartEditorState.STRUMLINE_SIZE) addNoteStyleAnimations(note, note.noteData.data, note.fetchNoteStyle(note.noteStyle));
+        }
+
         if (chartEditor.audioWaveforms.members[0] != null) chartEditor.audioWaveforms.members[0].x = chartEditor.healthIconDad.x + chartEditor.healthIconDad.width / 2;
         if (chartEditor.audioWaveforms.members[1] != null) chartEditor.audioWaveforms.members[1].x = chartEditor.healthIconBF.x + chartEditor.healthIconBF.width / 2;
+
+        chartEditor.notePreviewViewportBoundsDirty = true;
     }
 
     function addNoteStyleAnimations(note:ChartEditorNoteSprite, dir:Int, noteStyle:NoteStyle):Void {

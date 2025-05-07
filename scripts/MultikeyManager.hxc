@@ -74,9 +74,10 @@ class MultikeyManager extends ScriptedModule {
     }
 
     override function onSongLoaded(event:SongLoadScriptEvent) {
-        if (PlayState.instance == null && Strumline.KEY_COUNT == 4) return;
+        if (PlayState.instance == null) return;
+
         state = PlayState.instance;
-        Strumline.NOTE_SPLASH_CAP = 16;
+        //Strumline.NOTE_SPLASH_CAP = 16;
         processExtraNotes(state.playerStrumline, Strumline.KEY_COUNT);
         processExtraNotes(state.opponentStrumline, Strumline.KEY_COUNT);
     }
@@ -209,7 +210,7 @@ class MultikeyManager extends ScriptedModule {
     // Helper Methods
     function processExtraNotes(strumline:Strumline, totalKeys:Int) {
         // TODO: Fix X/Y position of Strumline respectively StrumNotes
-/*        if (totalKeys != 4) {
+/*        if (totalKeys < 4) {
             var centering = 20;
             if (strumline == state.playerStrumline) {
                 strumline.x = FlxG.width / 2 + Constants.STRUMLINE_X_OFFSET - centering;
@@ -222,7 +223,7 @@ class MultikeyManager extends ScriptedModule {
             if (notesArray[i] != null) {
                 notesArray[i].direction = mkHooks.NOTE_DIRECTIONS[totalKeys][i];
                 notesArray[i].x = strumline.x;
-                notesArray[i].x += getXPos(Strumline.DIRECTIONS[i]);
+                notesArray[i].x += Strumline.DIRECTIONS[i] * Strumline.NOTE_SPACING;
                 notesArray[i].x -= Strumline.NUDGE;
                 strumline.noteStyle.applyStrumlineOffsets(notesArray[i]);
                 //trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == state.playerStrumline ? " (Player)" : " (Opponent)"));
@@ -268,7 +269,7 @@ class MultikeyManager extends ScriptedModule {
 
         for (i in 0...totalKeys) {
             var child:StrumlineNote = new StrumlineNote(strumline.noteStyle, strumline.isPlayer, Strumline.DIRECTIONS[i]);
-            child.x = getXPos(Strumline.DIRECTIONS[i]);
+            child.x = Strumline.DIRECTIONS[i] * Strumline.NOTE_SPACING;
             child.x -= Strumline.INITIAL_OFFSET;
             strumline.noteStyle.applyStrumlineOffsets(child);
 
@@ -280,21 +281,6 @@ class MultikeyManager extends ScriptedModule {
             FlxTween.tween(child, {y: child.y + jumpHeight, alpha: 1}, 0.2, {
                 ease: FlxEase.circOut,
             });
-        }
-    }
-
-    function getXPos(direction) {
-        return switch (direction) {
-            case 0: 0;
-            case 1: 1 * Strumline.NOTE_SPACING;
-            case 2: 2 * Strumline.NOTE_SPACING;
-            case 3: 3 * Strumline.NOTE_SPACING;
-            case 4: 4 * Strumline.NOTE_SPACING;
-            case 5: 5 * Strumline.NOTE_SPACING;
-            case 6: 6 * Strumline.NOTE_SPACING;
-            case 7: 7 * Strumline.NOTE_SPACING;
-            case 8: 8 * Strumline.NOTE_SPACING;
-            default: 0;
         }
     }
 
