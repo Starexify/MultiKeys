@@ -58,7 +58,7 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         target.updateHitbox();
         target.glow.updateHitbox();
 
-        for (direction in 0...9) {
+        for (direction in 0...Strumline.KEY_COUNT) {
             var color = StringTools.toTitleCase(mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][direction]);
             target.glow.animation.addByPrefix("holdCoverStart" + color, "holdCoverStart" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT, false);
             target.glow.animation.addByPrefix("holdCover" + color, "holdCover" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT);

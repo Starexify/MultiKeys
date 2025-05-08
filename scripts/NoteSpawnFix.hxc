@@ -41,10 +41,11 @@ class NoteSpawnFix extends ScriptedModule {
         if (event.note.get_isHoldNote()) {
             // Set correct color for Sustain Notes
             event.note.holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + mkHooks.NOTE_COLORS[mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.direction]]));
-            event.note.holdNoteSprite.noteDirection = event.note.direction % Strumline.KEY_COUNT;
+            event.note.holdNoteSprite.noteDirection = event.note.direction;
             event.note.holdNoteSprite.graphicWidth = event.note.holdNoteSprite.graphic.width / 8 * event.note.holdNoteSprite.zoom;
             event.note.holdNoteSprite.updateColorTransform();
-            event.note.holdNoteSprite.triggerRedraw();
+            event.note.holdNoteSprite.updateClipping();
+            event.note.holdNoteSprite.updateHitbox();
 
             event.note.holdNoteSprite.x = event.note.x + (Strumline.STRUMLINE_SIZE / 2) - (event.note.holdNoteSprite.get_width() / 2);
         }

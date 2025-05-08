@@ -1,17 +1,19 @@
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.play.PlayState;
-import funkin.play.notes.NoteHoldCover;
 import funkin.play.notes.Strumline;
 import funkin.util.tools.StringTools;
 
 import flixel.FlxG;
 import flixel.group.FlxTypedSpriteGroup;
+import funkin.play.notes.NoteHoldCover;
+import flixel.FlxSprite;
 
 class MultikeyNoteHandler extends ScriptedModule {
     var mkHooks:MultikeyHooks;
 
     var noteHoldCovers:FlxTypedSpriteGroup;
+    var glow:FlxSprite;
 
     var state:PlayState;
 
@@ -39,7 +41,7 @@ class MultikeyNoteHandler extends ScriptedModule {
     function reinitHoldCovers(strumline:Strumline, totalKeys:Int) {
         trace("Reiniting Hold Covers");
         strumline.noteHoldCovers.destroy();
-        noteHoldCovers = new FlxTypedSpriteGroup(0, 0, 9);
+        noteHoldCovers = new FlxTypedSpriteGroup(0, 0, totalKeys);
         noteHoldCovers.zIndex = 40;
         strumline.noteHoldCovers = noteHoldCovers;
         strumline.add(noteHoldCovers);
@@ -143,15 +145,14 @@ class MultikeyNoteHandler extends ScriptedModule {
 
     function playNoteHoldCover(strumline:Strumline, holdNote) {
         if (!strumline.showNotesplash) return;
-        var cover = new NoteHoldCover(strumline.noteStyle);
-        noteHoldCovers.add(cover);
+        var cover = constructNoteHoldCover(strumline);
         if (cover != null) {
             cover.holdNote = holdNote;
             holdNote.cover = cover;
 
             var dir = holdNote.noteDirection;
             var color = StringTools.toTitleCase(mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir]);
-            cover.glow.animation.play("holdCoverStart" + color);
+            glow.animation.play("holdCoverStart" + color);
             //trace(cover.glow.animation.name + " " + dir);
 
             cover.x = strumline.x;
@@ -175,6 +176,13 @@ class MultikeyNoteHandler extends ScriptedModule {
         if (noteHoldCovers.length < noteHoldCovers.maxSize) {
             // Create a new note hold cover.
             result = new NoteHoldCover(strumline.noteStyle);
+            glow = new FlxSprite();
+            result.add(glow);
+            strumline.noteStyle.buildHoldCoverSprite(result);
+            glow.animation.onFinish.add(result.onAnimationFinished);
+
+            result.glow = glow;
+
             noteHoldCovers.add(result);
         } else {
             // Else, find a note splash which is inactive so we can revive it.
