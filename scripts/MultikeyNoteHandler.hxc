@@ -1,14 +1,17 @@
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.play.PlayState;
+import funkin.play.notes.NoteHoldCover;
 import funkin.play.notes.Strumline;
 import funkin.util.tools.StringTools;
 
 import flixel.FlxG;
-import funkin.play.notes.NoteHoldCover;
+import flixel.group.FlxTypedSpriteGroup;
 
 class MultikeyNoteHandler extends ScriptedModule {
     var mkHooks:MultikeyHooks;
+
+    var noteHoldCovers:FlxTypedSpriteGroup;
 
     var state:PlayState;
 
@@ -24,6 +27,22 @@ class MultikeyNoteHandler extends ScriptedModule {
         if (PlayState.instance == null) return;
         state = PlayState.instance;
         Strumline.NOTE_SPLASH_CAP = Strumline.KEY_COUNT + 2;
+    }
+
+    override function onSongEvent(event:SongEventScriptEvent) {
+        if (event.eventData.eventKind == "KeyCountEvent") {
+            reinitHoldCovers(state.playerStrumline, event.eventData.value?.keyCount);
+            reinitHoldCovers(state.opponentStrumline, event.eventData.value?.keyCount);
+        }
+    }
+
+    function reinitHoldCovers(strumline:Strumline, totalKeys:Int) {
+        trace("Reiniting Hold Covers");
+        strumline.noteHoldCovers.destroy();
+        noteHoldCovers = new FlxTypedSpriteGroup(0, 0, 9);
+        noteHoldCovers.zIndex = 40;
+        strumline.noteHoldCovers = noteHoldCovers;
+        strumline.add(noteHoldCovers);
     }
 
     override function onUpdate(event:UpdateScriptEvent) {
@@ -124,17 +143,16 @@ class MultikeyNoteHandler extends ScriptedModule {
 
     function playNoteHoldCover(strumline:Strumline, holdNote) {
         if (!strumline.showNotesplash) return;
-        strumline.noteHoldCovers.maxSize = 9;
-        var cover = strumline.constructNoteHoldCover();
+        var cover = new NoteHoldCover(strumline.noteStyle);
+        noteHoldCovers.add(cover);
         if (cover != null) {
             cover.holdNote = holdNote;
             holdNote.cover = cover;
-            cover.visible = true;
 
             var dir = holdNote.noteDirection;
             var color = StringTools.toTitleCase(mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir]);
-            cover.glow.animation.play('holdCoverStart' + color);
-            trace(cover.glow.animation.name + dir);
+            cover.glow.animation.play("holdCoverStart" + color);
+            //trace(cover.glow.animation.name + " " + dir);
 
             cover.x = strumline.x;
             cover.x += dir * Strumline.NOTE_SPACING;
@@ -148,6 +166,30 @@ class MultikeyNoteHandler extends ScriptedModule {
             cover.y += strumline.noteStyle.getHoldCoverOffsets()[1] * cover.scale.y;
             cover.y += -96;
         }
+    }
+
+    function constructNoteHoldCover(strumline:Strumline) {
+        var result:NoteHoldCover = null;
+
+        // If we haven't filled the pool yet...
+        if (noteHoldCovers.length < noteHoldCovers.maxSize) {
+            // Create a new note hold cover.
+            result = new NoteHoldCover(strumline.noteStyle);
+            noteHoldCovers.add(result);
+        } else {
+            // Else, find a note splash which is inactive so we can revive it.
+            result = noteHoldCovers.getFirstAvailable();
+
+            if (result != null) {
+                result.revive();
+            } else {
+                // The note hold cover pool is full and all note hold covers are active,
+                // so we just pick one at random to destroy and restart.
+                result = FlxG.random.getObject(noteHoldCovers.members);
+            }
+        }
+
+        return result;
     }
 
     // Cleanup

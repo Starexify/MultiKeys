@@ -18,6 +18,7 @@ import flixel.math.FlxMath;
 
 import Lambda;
 import funkin.Preferences;
+import flixel.group.FlxTypedSpriteGroup;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 
@@ -78,8 +79,8 @@ class MultikeyManager extends ScriptedModule {
             if (keysCount == Strumline.KEY_COUNT) return;
             Strumline.KEY_COUNT = event.eventData.value?.keyCount;
             setupMultikey(Strumline.KEY_COUNT);
-            refreshStrumline(state?.playerStrumline, Strumline.KEY_COUNT);
-            refreshStrumline(state?.opponentStrumline, Strumline.KEY_COUNT);
+            refreshStrumline(state.playerStrumline, Strumline.KEY_COUNT);
+            refreshStrumline(state.opponentStrumline, Strumline.KEY_COUNT);
             if (keysCount != 4) initPreciseInputs();
             else recoverPreciseInputs();
         }
@@ -240,6 +241,17 @@ class MultikeyManager extends ScriptedModule {
                 //trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == state.playerStrumline ? " (Player)" : " (Opponent)"));
             }
         }
+    }
+
+    function reinitHoldCovers(strumline:Strumline, totalKeys:Int) {
+        strumline.noteHoldCovers.destroy();
+        var noteHoldCovers = new FlxTypedSpriteGroup(0, 0, 9);
+        noteHoldCovers.zIndex = 40;
+        strumline.noteHoldCovers = noteHoldCovers;
+        strumline.add(noteHoldCovers);
+        trace(noteHoldCovers);
+        trace(strumline.noteHoldCovers);
+        trace(strumline.noteHoldCovers == noteHoldCovers);
     }
 
     function refreshStrumline(strumline:Strumline, totalKeys:Int) {
