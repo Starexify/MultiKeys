@@ -5,9 +5,9 @@ import funkin.play.notes.Strumline;
 import funkin.util.tools.StringTools;
 
 import flixel.FlxG;
+import flixel.FlxSprite;
 import flixel.group.FlxTypedSpriteGroup;
 import funkin.play.notes.NoteHoldCover;
-import flixel.FlxSprite;
 
 class MultikeyNoteHandler extends ScriptedModule {
     var mkHooks:MultikeyHooks;
