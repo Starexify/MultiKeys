@@ -48,46 +48,6 @@ class MultikeyCompat extends ScriptedModule {
     override function onStateChangeEnd(event:StateChangeScriptEvent) {
         if (Std.isOfType(event.targetState, ChartEditorState)) {
             chartEditor = event.targetState;
-            updateChartEditor(chartEditor, DEFAULT_KEY_COUNT);
-        } else
-            chartEditor = null;
-    }
-
-    override function onUpdate(event:UpdateScriptEvent) {
-        if (chartEditor != null) {
-            //var keyCount = FileUtilSandboxed.readJSONFromPath("assets/data/songs/2hot/2hot-metadata.json")?.keysCount;
-            //trace(chartEditor.get_currentSongId());
-
-            // Add Key Count component to the Song Metadata toolbox
-            if (!addedComponent && chartEditor.activeToolboxes.exists(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT)) {
-                var metadataToolbox = chartEditor.activeToolboxes.get(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT);
-                var frameVariation = metadataToolbox.findComponent("frameVariation", Frame, true);
-
-                if (frameVariation != null) {
-                    var grid = frameVariation.findComponent(null, Grid, true);
-                    if (grid != null) {
-                        var keyCountLabel:Label = new Label();
-                        keyCountLabel.text = "Key Count:";
-                        keyCountLabel.verticalAlign = "center";
-                        keyCountLabel.horizontalAlign = "right";
-
-                        var keyCount:NumberStepper = new NumberStepper();
-                        keyCount.id = "keyCount";
-                        keyCount.pos = ChartEditorState.STRUMLINE_SIZE;
-                        keyCount.min = 1;
-                        keyCount.max = 9;
-                        keyCount.tooltip = "Set the key count of the song variation.";
-                        keyCount.onChange = (event:UIEvent) -> updateChartEditor(chartEditor, event.target.pos);
-
-                        grid.addComponent(keyCountLabel);
-                        grid.addComponent(keyCount);
-
-                        metadataToolbox.height += 30;
-                        frameVariation.height += 30;
-                        addedComponent = true;
-                    }
-                }
-            }
 
             // Add Keys to the Playbar
             if (box == null) box = chartEditor.root.findComponent("playbar", Box, false);
@@ -136,11 +96,51 @@ class MultikeyCompat extends ScriptedModule {
                     addedKeysComponent = true;
                 }
             }
+            updateChartEditor(chartEditor, DEFAULT_KEY_COUNT);
+        } else
+            chartEditor = null;
+    }
+
+    override function onUpdate(event:UpdateScriptEvent) {
+        if (chartEditor != null) {
+            //var keyCount = FileUtilSandboxed.readJSONFromPath("assets/data/songs/2hot/2hot-metadata.json")?.keysCount;
+            //trace(chartEditor.get_currentSongId());
+
+            // Add Key Count component to the Song Metadata toolbox
+            if (!addedComponent && chartEditor.activeToolboxes.exists(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT)) {
+                var metadataToolbox = chartEditor.activeToolboxes.get(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT);
+                var frameVariation = metadataToolbox.findComponent("frameVariation", Frame, true);
+
+                if (frameVariation != null) {
+                    var grid = frameVariation.findComponent(null, Grid, true);
+                    if (grid != null) {
+                        var keyCountLabel:Label = new Label();
+                        keyCountLabel.text = "Key Count:";
+                        keyCountLabel.verticalAlign = "center";
+                        keyCountLabel.horizontalAlign = "right";
+
+                        var keyCount:NumberStepper = new NumberStepper();
+                        keyCount.id = "keyCount";
+                        keyCount.pos = ChartEditorState.STRUMLINE_SIZE;
+                        keyCount.min = 1;
+                        keyCount.max = 9;
+                        keyCount.tooltip = "Set the key count of the song variation.";
+                        keyCount.onChange = (event:UIEvent) -> updateChartEditor(chartEditor, event.target.pos);
+
+                        grid.addComponent(keyCountLabel);
+                        grid.addComponent(keyCount);
+
+                        metadataToolbox.height += 30;
+                        frameVariation.height += 30;
+                        addedComponent = true;
+                    }
+                }
+            }
 
             // Updates the ChartEditor Key Count based on the KeyCountChange Event
             setChartEditorKeyCount(chartEditor);
 
-            /*for (note in chartEditor.renderedNotes.members) {
+            for (note in chartEditor.renderedNotes.members) {
                 if (note.noteData != null) {
                     if (note.noteData.data <= ChartEditorState.STRUMLINE_SIZE) addNoteStyleAnimations(note, note.noteData.data, note.fetchNoteStyle(note.noteStyle));
                     var dirName:String = note.overrideData != null ? mkHooks.NOTE_COLORS[note.overrideData % ChartEditorState.STRUMLINE_SIZE] : mkHooks.NOTE_COLORS[note.noteData.data % ChartEditorState.STRUMLINE_SIZE];
@@ -174,7 +174,7 @@ class MultikeyCompat extends ScriptedModule {
                     hold.updateClipping();
                     hold.updateHitbox();
                 }
-            }*/
+            }
         }
     }
 
@@ -188,7 +188,6 @@ class MultikeyCompat extends ScriptedModule {
         if (passedEvent != null && passedEvent.eventData != null && passedEvent.eventData.eventKind == "KeyCountEvent" && passedEvent.eventData.value != null) {
             var currentKeyCount = passedEvent.eventData.value?.keyCount;
             if (currentKeyCount != lastKeyCount) {
-                lastKeyCount = currentKeyCount;
                 updateChartEditor(chartEditor, currentKeyCount);
             }
         }
@@ -219,12 +218,6 @@ class MultikeyCompat extends ScriptedModule {
         chartEditor.buttonSelectEvent.x = chartEditor.buttonSelectPlayer.x + chartEditor.buttonSelectPlayer.width;
         chartEditor.buttonSelectPlayer.findComponent(null, Label, false).wordWrap = chartEditor.buttonSelectOpponent.findComponent(null, Label, false).wordWrap = false;
 
-        //chartEditor.renderedHoldNotes.clear();
-        //chartEditor.renderedNotes.clear();
-/*        chartEditor.renderedEvents.clear();
-        chartEditor.renderedSelectionSquares.clear();*/
-/*        chartEditor.buildNoteGroup();
-        chartEditor.noteDisplayDirty = true;*/
         chartEditor.renderedNotes.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
         chartEditor.renderedHoldNotes.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
         chartEditor.renderedEvents.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
@@ -242,7 +235,6 @@ class MultikeyCompat extends ScriptedModule {
         if (chartEditor.audioWaveforms.members[1] != null)
             chartEditor.audioWaveforms.members[1].x = chartEditor.healthIconBF.x - (lastKeyCount > keyCount ? chartEditor.healthIconBF.width / 2 : -chartEditor.healthIconBF.width / 2);
 
-        chartEditor.notePreviewViewportBoundsDirty = true;
         lastKeyCount = keyCount;
     }
 

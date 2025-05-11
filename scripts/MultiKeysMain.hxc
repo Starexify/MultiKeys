@@ -1,7 +1,0 @@
-import funkin.modding.module.ScriptedModule;
-
-class MultiKeysMain extends ScriptedModule {
-    function new() {
-        super("MultiKeysMain", 1001);
-    }
-}

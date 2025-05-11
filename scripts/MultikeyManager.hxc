@@ -1,3 +1,4 @@
+import funkin.Preferences;
 import funkin.input.FunkinAction;
 import funkin.input.PreciseInputManager;
 import funkin.modding.events.ScriptEvent;
@@ -9,18 +10,18 @@ import funkin.play.notes.Strumline;
 import funkin.play.notes.StrumlineNote;
 import funkin.save.Save;
 import funkin.util.Constants;
+import funkin.util.FileUtilSandboxed;
+import funkin.util.ReflectUtil;
 import funkin.util.tools.StringTools;
 
 import flixel.FlxG;
 import flixel.input.actions.FlxAction;
 import flixel.input.actions.FlxActionDigital;
 import flixel.math.FlxMath;
+import flixel.tweens.FlxEase;
+import flixel.tweens.FlxTween;
 
 import Lambda;
-import funkin.Preferences;
-import flixel.group.FlxTypedSpriteGroup;
-import flixel.tweens.FlxTween;
-import flixel.tweens.FlxEase;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
@@ -50,9 +51,21 @@ class MultikeyManager extends ScriptedModule {
         onStateChange(event.targetState);
     }
 
-    function onStateChange(state) {
+    function onStateChange(state:PlayState) {
         if (Std.isOfType(state, PlayState)) {
             Strumline.KEY_COUNT = 4;
+            // state.currentSong.id
+            // state.currentDifficulty
+            var metadata;
+            if (state.currentVariation == "default")
+                metadata = FileUtilSandboxed.readJSONFromPath("assets/data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata.json").playData.keyCounts;
+            else
+                metadata = FileUtilSandboxed.readJSONFromPath("assets/data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata-" + state.currentVariation + ".json").playData.keyCounts;
+
+            var keyCount = ReflectUtil.getProperty(metadata, state.currentDifficulty);
+            trace(keyCount);
+            //trace(FileUtilSandboxed.directoryExists("mods/Multikey/_merge/data/songs/" + state.currentSong.id));
+            //trace(FileUtilSandboxed.readJSONFromPath("Multikey/_merge/data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata.json"));
             setupMultikey(Strumline.KEY_COUNT);
         }
     }
@@ -241,17 +254,6 @@ class MultikeyManager extends ScriptedModule {
                 //trace("[MK] Processed extra note: Direction = " + notesArray[i].direction + ", Index = " + i + (strumline == state.playerStrumline ? " (Player)" : " (Opponent)"));
             }
         }
-    }
-
-    function reinitHoldCovers(strumline:Strumline, totalKeys:Int) {
-        strumline.noteHoldCovers.destroy();
-        var noteHoldCovers = new FlxTypedSpriteGroup(0, 0, 9);
-        noteHoldCovers.zIndex = 40;
-        strumline.noteHoldCovers = noteHoldCovers;
-        strumline.add(noteHoldCovers);
-        trace(noteHoldCovers);
-        trace(strumline.noteHoldCovers);
-        trace(strumline.noteHoldCovers == noteHoldCovers);
     }
 
     function refreshStrumline(strumline:Strumline, totalKeys:Int) {
