@@ -22,6 +22,7 @@ import flixel.tweens.FlxTween;
 
 import Lambda;
 import funkin.play.song.ScriptedSong;
+import funkin.ui.debug.charting.ChartEditorState;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");

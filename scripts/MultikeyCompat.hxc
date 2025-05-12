@@ -157,6 +157,7 @@ class MultikeyCompat extends ScriptedModule {
         //trace("[MultiKeys] Changing Chart Editor Key Count to: " + keyCount);
         if (playbarKeys != null) playbarKeys.text = "Keys: " + keyCount;
         if (keyCounter != null) keyCounter.value = keyCount;
+        Strumline.KEY_COUNT = keyCount;
         ChartEditorState.STRUMLINE_SIZE = FNFLegacyImporter.STRUMLINE_SIZE = Strumline.KEY_COUNT = keyCount;
         ChartEditorThemeHandler.TOTAL_COLUMN_COUNT = ChartEditorState.STRUMLINE_SIZE * 2 + 1;
         ChartEditorState.NOTE_PREVIEW_X_POS = -(keyCount * ChartEditorState.GRID_SIZE) + 480;
