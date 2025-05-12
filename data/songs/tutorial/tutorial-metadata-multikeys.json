@@ -1,0 +1,20 @@
+{
+  "version": "2.2.4",
+  "songName": "Tutorial (MultiKeys)",
+  "artist": "Kawai Sprite",
+  "charter": "ninjamuffin99 + MtH",
+  "playData": {
+    "ratings": { "multi": 0 },
+    "stage": "mainStage",
+    "characters": { "player": "bf", "opponent": "gf" },
+    "difficulties": ["multi"],
+    "noteStyle": "funkin",
+    "album": "volume1",
+    "stickerPack": "bonus-tutorial",
+    "previewStart": 0,
+    "previewEnd": 15000
+  },
+  "timeFormat": "ms",
+  "timeChanges": [{ "d": 4, "n": 4, "t": -1, "bt": [4, 4, 4, 4], "bpm": 100 }],
+  "generatedBy": "ImVeryBad"
+}
