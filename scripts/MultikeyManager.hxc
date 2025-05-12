@@ -21,6 +21,7 @@ import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 
 import Lambda;
+import funkin.play.song.ScriptedSong;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
@@ -53,16 +54,23 @@ class MultikeyManager extends ScriptedModule {
     function onStateChange(state:PlayState) {
         if (Std.isOfType(state, PlayState)) {
             Strumline.KEY_COUNT = 4;
+
+            var targetSong = PlayState.lastParams.targetSong;
+            if (Std.isOfType(targetSong, ScriptedSong)) {
+                var check = targetSong.scriptGet("findFunction");
+                if (check("setupMultikey") != null) targetSong.scriptCall("setupMultikey", []);
+            }
+
             // state.currentSong.id
             // state.currentDifficulty
-            var metadata;
+/*            var metadata;
             if (state.currentVariation == "default")
                 metadata = FileUtilSandboxed.readJSONFromPath("assets/data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata.json").playData.keyCounts;
             else
                 metadata = FileUtilSandboxed.readJSONFromPath("assets/data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata-" + state.currentVariation + ".json").playData.keyCounts;
 
             var keyCount = ReflectUtil.getProperty(metadata, state.currentDifficulty);
-            trace(keyCount);
+            trace(keyCount);*/
             //trace(FileUtilSandboxed.directoryExists("mods/Multikey/_merge/data/songs/" + state.currentSong.id));
             //trace(FileUtilSandboxed.readJSONFromPath("Multikey/_merge/data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata.json"));
             setupMultikey(Strumline.KEY_COUNT);

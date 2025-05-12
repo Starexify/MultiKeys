@@ -3,15 +3,10 @@ import funkin.graphics.FunkinSprite;
 import funkin.modding.module.ScriptedModule;
 import funkin.modding.events.ScriptEvent;
 import funkin.play.notes.Strumline;
-import funkin.play.notes.notestyle.NoteStyle;
 import funkin.ui.debug.charting.ChartEditorState;
 import funkin.ui.debug.charting.components.ChartEditorEventSprite;
-import funkin.ui.debug.charting.components.ChartEditorNoteSprite;
 import funkin.ui.debug.charting.handlers.ChartEditorThemeHandler;
 import funkin.ui.debug.charting.handlers.ChartEditorToolboxHandler;
-import funkin.util.Constants;
-import funkin.util.FileWriteMode;
-import funkin.util.tools.StringTools;
 
 import flixel.FlxG;
 

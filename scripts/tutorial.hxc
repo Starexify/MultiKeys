@@ -1,0 +1,13 @@
+import funkin.play.PlayState;
+import funkin.play.notes.Strumline;
+import funkin.play.song.ScriptedSong;
+
+class TutorialSong extends ScriptedSong {
+    function new() {
+        super("tutorial");
+    }
+
+    function setupMultikey() {
+        if (PlayState.lastParams.targetDifficulty == "normal") Strumline.KEY_COUNT = 8;
+    }
+}
