@@ -1,0 +1,13 @@
+import funkin.modding.module.ScriptedModule;
+import funkin.util.Constants;
+import funkin.modding.events.ScriptEvent;
+
+class MultiKeysMain extends ScriptedModule {
+    function new() {
+        super("MultiKeysMain", 0);
+    }
+
+    override function onCreate(event:ScriptEvent) {
+        Constants.DEFAULT_DIFFICULTY_LIST_FULL.push("multi");
+    }
+}

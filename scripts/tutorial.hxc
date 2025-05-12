@@ -8,6 +8,6 @@ class TutorialSong extends ScriptedSong {
     }
 
     function setupMultikey() {
-        if (PlayState.lastParams.targetDifficulty == "normal") Strumline.KEY_COUNT = 8;
+        if (PlayState.lastParams.targetDifficulty == "multi") Strumline.KEY_COUNT = 8;
     }
 }
