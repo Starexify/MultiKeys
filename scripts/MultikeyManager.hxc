@@ -15,7 +15,6 @@ import funkin.util.ReflectUtil;
 import funkin.util.tools.StringTools;
 
 import flixel.FlxG;
-import flixel.input.actions.FlxAction;
 import flixel.input.actions.FlxActionDigital;
 import flixel.math.FlxMath;
 import flixel.tweens.FlxEase;
