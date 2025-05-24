@@ -8,6 +8,7 @@ import funkin.play.PlayState;
 import funkin.play.notes.NoteSprite;
 import funkin.play.notes.Strumline;
 import funkin.play.notes.StrumlineNote;
+import funkin.play.song.ScriptedSong;
 import funkin.save.Save;
 import funkin.util.Constants;
 import funkin.util.FileUtilSandboxed;
@@ -21,8 +22,9 @@ import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 
 import Lambda;
-import funkin.play.song.ScriptedSong;
-import funkin.ui.debug.charting.ChartEditorState;
+import haxe.Exception;
+import funkin.util.FileUtilSandboxed;
+import funkin.modding.PolymodHandler;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
@@ -38,7 +40,7 @@ class MultikeyManager extends ScriptedModule {
     var justReleasedActions = [];
 
     function new() {
-        super("MultikeyManager", FlxMath.MIN_VALUE_INT + 1);
+        super("MultikeyManager", FlxMath.MIN_VALUE_INT);
         mkHooks = new MultikeyHooks();
     }
 
@@ -54,26 +56,29 @@ class MultikeyManager extends ScriptedModule {
 
     function onStateChange(state:PlayState) {
         if (Std.isOfType(state, PlayState)) {
-            Strumline.KEY_COUNT = 4;
+            var keyCount = 4;
+            var metadataPath = buildMetadataPath(state);
+            var prevMeta = readKeyCount(metadataPath);
 
-            var targetSong = PlayState.lastParams.targetSong;
-            if (Std.isOfType(targetSong, ScriptedSong)) {
-                var check = targetSong.scriptGet("findFunction");
-                if (check("setupMultikey") != null) targetSong.scriptCall("setupMultikey", []);
+            if (prevMeta?.playData?.keyCounts != null) {
+                var extractedCount = ReflectUtil.getProperty(prevMeta.playData.keyCounts, state.currentDifficulty);
+                if (extractedCount != null) keyCount = extractedCount;
+            } else {
+                var multiMeta = readKeyCount("data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-multimeta");
+                if (multiMeta?.keyCounts?.variation != null) {
+                    var variationData = ReflectUtil.getProperty(multiMeta.keyCounts.variation, state.currentVariation);
+                    if (variationData != null) {
+                        var multiKeyCount = ReflectUtil.getProperty(variationData, state.currentDifficulty);
+                        if (multiKeyCount != null) keyCount = multiKeyCount;
+                    }
+                }
             }
 
-            // state.currentSong.id
-            // state.currentDifficulty
-/*            var metadata;
-            if (state.currentVariation == "default")
-                metadata = FileUtilSandboxed.readJSONFromPath("assets/data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata.json").playData.keyCounts;
-            else
-                metadata = FileUtilSandboxed.readJSONFromPath("assets/data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata-" + state.currentVariation + ".json").playData.keyCounts;
+            Strumline.KEY_COUNT = keyCount;
+            trace("[MultiKeys] Set key count to: " + keyCount);
 
-            var keyCount = ReflectUtil.getProperty(metadata, state.currentDifficulty);
-            trace(keyCount);*/
-            //trace(FileUtilSandboxed.directoryExists("mods/Multikey/_merge/data/songs/" + state.currentSong.id));
-            //trace(FileUtilSandboxed.readJSONFromPath("Multikey/_merge/data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata.json"));
+            handleScriptedSongSetup();
+
             setupMultikey(Strumline.KEY_COUNT);
         }
     }
@@ -316,6 +321,26 @@ class MultikeyManager extends ScriptedModule {
                 ease: FlxEase.circOut,
             });
         }
+    }
+
+    function buildMetadataPath(state:PlayState):String {
+        var basePath = "data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata";
+        return state.currentVariation == "default" ? basePath : basePath + "-" + state.currentVariation;
+    }
+
+    function readKeyCount(path):Dynamic {
+        for (mods in PolymodHandler.getAllModIds()) {
+            var filePath = "mods/" + mods + "/" + path + ".json";
+            if (FileUtilSandboxed.fileExists(filePath)) return FileUtilSandboxed.readJSONFromPath(filePath);
+        }
+    }
+
+    function handleScriptedSongSetup() {
+        var targetSong = PlayState.lastParams?.targetSong;
+        if (!Std.isOfType(targetSong, ScriptedSong)) return;
+        var check = targetSong.scriptGet("findFunction");
+
+        if (check("setupMultikey") != null) targetSong.scriptCall("setupMultikey", []);
     }
 
     // Cleanup
