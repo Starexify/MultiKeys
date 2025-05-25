@@ -5,7 +5,6 @@ import funkin.modding.module.ScriptedModule;
 import funkin.modding.events.ScriptEvent;
 import funkin.play.notes.Strumline;
 import funkin.ui.debug.charting.ChartEditorState;
-import funkin.ui.debug.charting.components.ChartEditorEventSprite;
 import funkin.ui.debug.charting.handlers.ChartEditorThemeHandler;
 import funkin.ui.debug.charting.handlers.ChartEditorToolboxHandler;
 import funkin.util.FileUtilSandboxed;
@@ -29,8 +28,8 @@ class MultikeyCompat extends ScriptedModule {
 
     var box:Null<Box>;
 
-    var lastKeyCount:Int = 4;
-    var passedEvent:ChartEditorEventSprite;
+    var passedEvents:Array<SongEventData> = [];
+    var lastPosition:Float = 0;
 
     var addedComponent:Bool;
     var addedKeysComponent:Bool;
@@ -39,7 +38,12 @@ class MultikeyCompat extends ScriptedModule {
     var keyCounter:NumberStepper;
 
     var DEFAULT_KEY_COUNT:Int = 4;
-    var cacheKeyCount:Int;
+    var metaKeyCount:Int = 4;
+    var lastKeyCount:Int = 4;
+
+    var prevSongId:String;
+    var prevDifficulty:String;
+    var prevVariation:String;
 
     function new() {
         super("MultikeyCompat", 1);
@@ -135,50 +139,91 @@ class MultikeyCompat extends ScriptedModule {
                 }
             }
 
-            var metadataPath = buildMetadataPath(chartEditor);
-            var jsonPath = Paths.json(metadataPath);
-            if (Assets.exists(jsonPath)) {
-                var prevMeta = SerializerUtil.fromJSON(Assets.getText(jsonPath));
-                if (prevMeta?.playData?.keyCounts != null) {
-                    var extractedCount = ReflectUtil.getProperty(prevMeta.playData.keyCounts, chartEditor.selectedDifficulty);
-                    if (extractedCount != null) cacheKeyCount = extractedCount;
-                }
-            } else {
-                var multiMeta = readKeyCount("data/songs/" + chartEditor.currentSongId + "/" + chartEditor.currentSongId + "-multimeta");
-                if (multiMeta?.keyCounts?.variation != null) {
-                    var variationData = ReflectUtil.getProperty(multiMeta.keyCounts.variation, chartEditor.selectedVariation);
-                    if (variationData != null) {
-                        var multiKeyCount = ReflectUtil.getProperty(variationData, chartEditor.selectedDifficulty);
-                        if (multiKeyCount != null) cacheKeyCount = multiKeyCount;
-                    }
-                }
-            }
-
-            if (DEFAULT_KEY_COUNT != cacheKeyCount)  {
-                trace(cacheKeyCount);
-                trace(DEFAULT_KEY_COUNT);
-                DEFAULT_KEY_COUNT = cacheKeyCount;
-                updateChartEditor(chartEditor, DEFAULT_KEY_COUNT);
-            }
-
-            // Updates the ChartEditor Key Count based on the KeyCountChange Event
-            setChartEditorKeyCount(chartEditor);
+            handleMultiMeta(chartEditor);
+            handleKeyCountEvent(chartEditor);
         }
     }
 
-    function setChartEditorKeyCount(chartEditor:ChartEditorState) {
-        for (eventSprite in chartEditor.renderedEvents)
-            if (FlxG.overlap(chartEditor.gridPlayhead, eventSprite)) {
-                passedEvent = eventSprite;
-                break;
-            }
+    // Handlers
+    function handleMultiMeta(chartEditor:ChartEditorState) {
+        if (prevSongId == chartEditor.currentSongId && prevDifficulty == chartEditor.selectedDifficulty && prevVariation == chartEditor.selectedVariation) return;
+        prevSongId = chartEditor.currentSongId;
+        prevDifficulty = chartEditor.selectedDifficulty;
+        prevVariation = chartEditor.selectedVariation;
 
-        if (passedEvent != null && passedEvent.eventData != null && passedEvent.eventData.eventKind == "KeyCountEvent" && passedEvent.eventData.value != null) {
-            var currentKeyCount = passedEvent.eventData.value?.keyCount;
-            if (currentKeyCount != lastKeyCount) {
-                updateChartEditor(chartEditor, currentKeyCount);
+        var metadataPath = buildMetadataPath(chartEditor);
+        var jsonPath = Paths.json(metadataPath);
+        if (Assets.exists(jsonPath)) {
+            var prevMeta = SerializerUtil.fromJSON(Assets.getText(jsonPath));
+            if (prevMeta?.playData?.keyCounts != null) {
+                var extractedCount = ReflectUtil.getProperty(prevMeta.playData.keyCounts, prevDifficulty);
+                if (extractedCount != null) metaKeyCount = extractedCount;
+            } else {
+                var multiMeta = readKeyCount("data/songs/" + prevSongId + "/" + prevSongId + "-multimeta");
+                if (multiMeta?.keyCounts?.variation != null) {
+                    var variationData = ReflectUtil.getProperty(multiMeta.keyCounts.variation, prevVariation);
+                    if (variationData != null) {
+                        var multiKeyCount = ReflectUtil.getProperty(variationData, prevDifficulty);
+                        if (multiKeyCount != null) metaKeyCount = multiKeyCount;
+                    }
+                }
             }
         }
+
+        if (lastKeyCount != metaKeyCount) {
+            lastKeyCount = metaKeyCount;
+            updateChartEditor(chartEditor, metaKeyCount);
+        }
+    }
+
+    function handleKeyCountEvent(chartEditor:ChartEditorState) {
+        var currentTime = chartEditor.conductorInUse.songPosition;
+
+        // Check if we moved backwards - if so, remove events we're no longer past
+        if (currentTime < lastPosition) {
+            passedEvents = passedEvents.filter(function(event) return event.time <= currentTime);
+        }
+
+        // Check for new overlapping events to add
+        for (eventSprite in chartEditor.renderedEvents) {
+            if (FlxG.overlap(chartEditor.gridPlayhead, eventSprite)) {
+                if (eventSprite.eventData != null && eventSprite.eventData.eventKind == "KeyCountEvent") {
+
+                    // Only add if we haven't seen this event before
+                    var alreadyHave = false;
+                    for (existingEvent in passedEvents) {
+                        if (existingEvent == eventSprite.eventData) {
+                            alreadyHave = true;
+                            break;
+                        }
+                    }
+
+                    if (!alreadyHave) {
+                        passedEvents.push(eventSprite.eventData);
+                        passedEvents.sort((a, b) -> return Std.int(a.time - b.time));
+                    }
+                }
+                break;
+            }
+        }
+
+        var activeKeyCount = metaKeyCount;
+
+        if (passedEvents.length > 0) {
+            // Use the most recent event we've passed
+            var mostRecentEvent = passedEvents[passedEvents.length - 1];
+            activeKeyCount = mostRecentEvent.value?.keyCount ?? metaKeyCount;
+        }
+
+        if (activeKeyCount != lastKeyCount) {
+            if (passedEvents.length > 0) {
+                updateChartEditor(chartEditor, activeKeyCount);
+            } else {
+                updateChartEditor(chartEditor, metaKeyCount);
+            }
+        }
+
+        lastPosition = currentTime;
     }
 
     // Updates the Chart Editor based on a custom Key Count
