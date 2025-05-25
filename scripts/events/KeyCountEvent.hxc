@@ -1,3 +1,5 @@
+package events;
+
 import funkin.data.event.SongEventSchema;
 import funkin.play.PlayState;
 import funkin.play.event.ScriptedSongEvent;

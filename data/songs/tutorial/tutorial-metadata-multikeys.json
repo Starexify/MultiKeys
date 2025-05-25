@@ -5,6 +5,7 @@
   "charter": "ninjamuffin99 + MtH",
   "playData": {
     "ratings": { "multi": 0 },
+    "keyCounts": { "multi": 8 },
     "stage": "mainStage",
     "characters": { "player": "bf", "opponent": "gf" },
     "difficulties": ["multi"],

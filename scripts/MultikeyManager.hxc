@@ -40,6 +40,8 @@ class MultikeyManager extends ScriptedModule {
     var justPressedActions = [];
     var justReleasedActions = [];
 
+    var checkKeys:Bool = true;
+
     function new() {
         super("MultikeyManager", FlxMath.MIN_VALUE_INT);
         mkHooks = new MultikeyHooks();
@@ -77,7 +79,6 @@ class MultikeyManager extends ScriptedModule {
             }
 
             Strumline.KEY_COUNT = keyCount;
-            trace("[MultiKeys] Set key count to: " + keyCount);
 
             handleScriptedSongSetup();
 
@@ -86,6 +87,11 @@ class MultikeyManager extends ScriptedModule {
     }
 
     function setupMultikey(keyCount:Int) {
+        // make sure it isn't outside the range [0, 9]
+        if (checkKeys && (Strumline.KEY_COUNT > 9 || Strumline.KEY_COUNT < 1)) Strumline.KEY_COUNT = 4;
+
+        trace("[MultiKeys] Trying to set key count to: " + keyCount + " , set it to: " + Strumline.KEY_COUNT);
+
         Strumline.STRUMLINE_SIZE = Std.int(104 * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT]);
         Strumline.NOTE_SPACING = mkHooks.NOTE_GAPS[Strumline.KEY_COUNT];
         Strumline.DIRECTIONS = [];
