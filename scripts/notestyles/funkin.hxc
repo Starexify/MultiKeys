@@ -1,3 +1,5 @@
+package notestyles;
+
 import funkin.data.animation.AnimationDataUtil;
 import funkin.play.notes.NoteHoldCover;
 import funkin.play.notes.NoteSprite;

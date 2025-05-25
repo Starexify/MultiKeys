@@ -25,6 +25,7 @@ import Lambda;
 import haxe.Exception;
 import funkin.util.FileUtilSandboxed;
 import funkin.modding.PolymodHandler;
+import funkin.util.SerializerUtil;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
@@ -57,9 +58,10 @@ class MultikeyManager extends ScriptedModule {
     function onStateChange(state:PlayState) {
         if (Std.isOfType(state, PlayState)) {
             var keyCount = 4;
-            var metadataPath = buildMetadataPath(state);
-            var prevMeta = readKeyCount(metadataPath);
 
+            var metadataPath = buildMetadataPath(state);
+
+            var prevMeta = SerializerUtil.fromJSON(Assets.getText(Paths.json(metadataPath)));
             if (prevMeta?.playData?.keyCounts != null) {
                 var extractedCount = ReflectUtil.getProperty(prevMeta.playData.keyCounts, state.currentDifficulty);
                 if (extractedCount != null) keyCount = extractedCount;
@@ -324,7 +326,7 @@ class MultikeyManager extends ScriptedModule {
     }
 
     function buildMetadataPath(state:PlayState):String {
-        var basePath = "data/songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata";
+        var basePath = "songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata";
         return state.currentVariation == "default" ? basePath : basePath + "-" + state.currentVariation;
     }
 

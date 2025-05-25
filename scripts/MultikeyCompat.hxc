@@ -14,9 +14,11 @@ import haxe.ui.components.Label;
 import haxe.ui.components.NumberStepper;
 import haxe.ui.components.VerticalRule;
 import haxe.ui.containers.Box;
+import haxe.ui.containers.Card;
 import haxe.ui.containers.Frame;
 import haxe.ui.containers.Grid;
 import haxe.ui.containers.HBox;
+import haxe.ui.events.MouseEvent;
 import haxe.ui.events.UIEvent;
 
 class MultikeyCompat extends ScriptedModule {
@@ -29,6 +31,7 @@ class MultikeyCompat extends ScriptedModule {
     var passedEvent:ChartEditorEventSprite;
 
     var addedComponent:Bool;
+    var addedEvent:Bool;
     var addedKeysComponent:Bool;
 
     var playbarKeys:Label;
@@ -92,6 +95,7 @@ class MultikeyCompat extends ScriptedModule {
                     addedKeysComponent = true;
                 }
             }
+
             updateChartEditor(chartEditor, DEFAULT_KEY_COUNT);
         } else
             chartEditor = null;
@@ -99,8 +103,16 @@ class MultikeyCompat extends ScriptedModule {
 
     override function onUpdate(event:UpdateScriptEvent) {
         if (chartEditor != null) {
-            //var keyCount = FileUtilSandboxed.readJSONFromPath("assets/data/songs/2hot/2hot-metadata.json")?.keysCount;
-            //trace(chartEditor.get_currentSongId());
+/*            var card = chartEditor.findComponent("splashSectionRight", Card, false);
+            trace(card);
+            if (card != null && !addedEvent) {
+                addedEvent = true;
+                card.onClick = (event:MouseEvent) -> {
+                    trace(event.value);
+                    trace(event.data);
+                    trace(event.target);
+                };
+            }*/
 
             // Add Key Count component to the Song Metadata toolbox
             if (!addedComponent && chartEditor.activeToolboxes.exists(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT)) {
