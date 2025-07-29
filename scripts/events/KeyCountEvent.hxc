@@ -14,7 +14,7 @@ class KeyCountEvent extends ScriptedSongEvent {
     }
 
     override function getEventSchema():SongEventSchema {
-        return new SongEventSchema([
+        return [
             {
                 name: "keyCount",
                 title: "Set key count to",
@@ -22,7 +22,7 @@ class KeyCountEvent extends ScriptedSongEvent {
                 defaultValue: 4,
                 units: "keys"
             }
-        ]);
+        ];
     }
 
     override function getTitle() {

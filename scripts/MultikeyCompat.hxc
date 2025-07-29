@@ -176,10 +176,13 @@ class MultikeyCompat extends ScriptedModule {
 
     function handleKeyCountEvent(chartEditor:ChartEditorState) {
         var currentTime = chartEditor.conductorInUse.songPosition;
+        var eventsChanged = false;
 
         // Check if we moved backwards - if so, remove events we're no longer past
         if (currentTime < lastPosition) {
-            passedEvents = passedEvents.filter(function(event) return event.time <= currentTime);
+            var oldLength = passedEvents.length;
+            passedEvents = passedEvents.filter((event) -> return event.time <= currentTime);
+            eventsChanged = passedEvents.length != oldLength;
         }
 
         // Check for new overlapping events to add
@@ -199,25 +202,29 @@ class MultikeyCompat extends ScriptedModule {
                     if (!alreadyHave) {
                         passedEvents.push(eventSprite.eventData);
                         passedEvents.sort((a, b) -> return Std.int(a.time - b.time));
+                        eventsChanged = true;
                     }
                 }
                 break;
             }
         }
 
-        var activeKeyCount = metaKeyCount;
+        if (eventsChanged) {
 
-        if (passedEvents.length > 0) {
-            // Use the most recent event we've passed
-            var mostRecentEvent = passedEvents[passedEvents.length - 1];
-            activeKeyCount = mostRecentEvent.value?.keyCount ?? metaKeyCount;
-        }
+            var activeKeyCount = metaKeyCount;
 
-        if (activeKeyCount != lastKeyCount) {
             if (passedEvents.length > 0) {
-                updateChartEditor(chartEditor, activeKeyCount);
-            } else {
-                updateChartEditor(chartEditor, metaKeyCount);
+                // Use the most recent event we've passed
+                var mostRecentEvent = passedEvents[passedEvents.length - 1];
+                activeKeyCount = mostRecentEvent.value?.keyCount ?? metaKeyCount;
+            }
+
+            if (activeKeyCount != lastKeyCount) {
+                if (passedEvents.length > 0) {
+                    updateChartEditor(chartEditor, activeKeyCount);
+                } else {
+                    updateChartEditor(chartEditor, metaKeyCount);
+                }
             }
         }
 
