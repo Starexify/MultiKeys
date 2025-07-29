@@ -1,17 +1,15 @@
-import funkin.modding.module.ScriptedModule;
+import funkin.modding.base.ScriptedFlxObject;
 
-import flixel.math.FlxMath;
+class MultikeyHooks extends ScriptedFlxObject {
+    public static var NOTE_GAPS = [112, 112, 112, 112, 112, 95, 85, 80, 70, 65];
+    public static var NOTE_SCALES = [1, 1, 1, 1, 1, 0.95, 0.9, 0.85, 0.8, 0.8];
+    public static var STRUMLINE_X = [-168, -112, -56, 0, 15, 35, 45, 55, 60];
 
-class MultikeyHooks extends ScriptedModule {
-    public var NOTE_GAPS = [112, 112, 112, 112, 112, 95, 85, 80, 70, 65];
-    public var NOTE_SCALES = [1, 1, 1, 1, 1, 0.95, 0.9, 0.85, 0.8, 0.8];
-    public var STRUMLINE_X = [-168, -112, -56, 0, 15, 35, 45, 55, 60];
+    public static var NOTE_COLORS = ["purple", "blue", "green", "red", "white", "yellow", "violet", "darkred", "dark"];
+    public static var DIRECTION_NAMES = ["LEFT", "DOWN", "UP", "RIGHT", "SPACE", "LEFT", "DOWN", "UP", "RIGHT"];
+    public static var DIRECTIONS:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
 
-    public var NOTE_COLORS = ["purple", "blue", "green", "red", "white", "yellow", "violet", "darkred", "dark"];
-    public var DIRECTION_NAMES = ["LEFT", "DOWN", "UP", "RIGHT", "SPACE", "LEFT", "DOWN", "UP", "RIGHT"];
-    public var DIRECTIONS:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
-
-    public var NOTE_DIRECTIONS:Array<Array<Int>> = [
+    public static var NOTE_DIRECTIONS:Array<Array<Int>> = [
         [],
         [2],
         [0, 3],
@@ -23,7 +21,7 @@ class MultikeyHooks extends ScriptedModule {
         [0, 1, 2, 3, 0, 1, 2, 3],
         [0, 1, 2, 3, 2, 0, 1, 2, 3],
     ];
-    public var MULTIKEY_DIRECTIONS:Array<Array<Int>> = [
+    public static var MULTIKEY_DIRECTIONS:Array<Array<Int>> = [
         [],
         [4],
         [0, 3],
@@ -35,7 +33,7 @@ class MultikeyHooks extends ScriptedModule {
         [0, 1, 2, 3, 5, 6, 7, 8],
         [0, 1, 2, 3, 4, 5, 6, 7, 8],
     ];
-    public var NOTE_DIRECTION_NAMES:Array<Array<String>> = [
+    public static var NOTE_DIRECTION_NAMES:Array<Array<String>> = [
         ["UP"],
         ["LEFT", "RIGHT"],
         ["LEFT", "UP", "RIGHT"],
@@ -46,7 +44,7 @@ class MultikeyHooks extends ScriptedModule {
         ["LEFT L", "DOWN L", "UP L", "RIGHT L", "LEFT R", "DOWN R", "UP R", "RIGHT R"],
         ["LEFT L", "DOWN L", "UP L", "RIGHT L", "SPACE", "LEFT R", "DOWN R", "UP R", "RIGHT R"],
     ];
-    public var MULTIKEY_COLORS = [
+    public static var MULTIKEY_COLORS = [
         [],
         ["white"],
         ["purple", "red"],
@@ -58,8 +56,4 @@ class MultikeyHooks extends ScriptedModule {
         ["purple", "blue", "green", "red", "yellow", "violet", "darkred", "dark"],
         ["purple", "blue", "green", "red", "white", "yellow", "violet", "darkred", "dark"],
     ];
-
-    function new() {
-        super("MultikeyHooks", FlxMath.MIN_VALUE_INT);
-    }
 }

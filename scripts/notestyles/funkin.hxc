@@ -1,5 +1,3 @@
-package notestyles;
-
 import funkin.data.animation.AnimationDataUtil;
 import funkin.play.notes.NoteHoldCover;
 import funkin.play.notes.NoteSprite;
@@ -8,18 +6,15 @@ import funkin.play.notes.notestyle.ScriptedNoteStyle;
 import funkin.util.tools.StringTools;
 
 class FunkinNoteStyle extends ScriptedNoteStyle {
-    var mkHooks:MultikeyHooks;
-
     function new() {
         super("funkin");
-        mkHooks = new MultikeyHooks();
     }
 
     override function getStrumlineAnimationData(dir) {
-        var multiDir = mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir];
-        var staticName = "arrow" + mkHooks.DIRECTION_NAMES[multiDir];
-        var pressName = mkHooks.NOTE_COLORS[multiDir] + " press";
-        var confirmName = mkHooks.NOTE_COLORS[multiDir] + " confirm";
+        var multiDir = MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir];
+        var staticName = "arrow" + MultikeyHooks.DIRECTION_NAMES[multiDir];
+        var pressName = MultikeyHooks.NOTE_COLORS[multiDir] + " press";
+        var confirmName = MultikeyHooks.NOTE_COLORS[multiDir] + " confirm";
 
         return [
             AnimationDataUtil.toNamed({prefix: staticName}, "static"),
@@ -30,19 +25,19 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     }
 
     override function fetchNoteAnimationData(dir) {
-        var arrowName = mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir];
+        var arrowName = MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir];
 
         return AnimationDataUtil.toNamed({prefix: arrowName});
     }
 
     override function buildNoteAnimations(target:NoteSprite) {
-        for (i in 0...mkHooks.NOTE_COLORS.length)
-            target.animation.addByPrefix(mkHooks.NOTE_COLORS[i] + "Scroll", mkHooks.NOTE_COLORS[i]);
+        for (i in 0...MultikeyHooks.NOTE_COLORS.length)
+            target.animation.addByPrefix(MultikeyHooks.NOTE_COLORS[i] + "Scroll", MultikeyHooks.NOTE_COLORS[i]);
     }
 
     override function buildHoldCoverFrameForDirection(direction) {
         //var atlas = Paths.getSparrowAtlas(holdCoverAssetPath, getAssetLibrary(getHoldCoverDirectionAssetPath(direction, true)));
-        var atlas = Paths.getSparrowAtlas("holdCover" + StringTools.toTitleCase(mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][direction]));
+        var atlas = Paths.getSparrowAtlas("holdCover" + StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][direction]));
         atlas.parent.persist = true;
         return atlas;
     }
@@ -61,7 +56,7 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         target.glow.updateHitbox();
 
         for (direction in 0...Strumline.KEY_COUNT) {
-            var color = StringTools.toTitleCase(mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][direction]);
+            var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][direction]);
             target.glow.animation.addByPrefix("holdCoverStart" + color, "holdCoverStart" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT, false);
             target.glow.animation.addByPrefix("holdCover" + color, "holdCover" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT);
             target.glow.animation.addByPrefix("holdCoverEnd" + color, "holdCoverEnd" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT, false);
@@ -81,18 +76,18 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
 
     // Scaling
     function getHoldCoverScale() {
-        return _data.assets.holdNoteCover?.scale ?? 1.0 * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+        return _data.assets.holdNoteCover?.scale ?? 1.0 * MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT];
     }
 
     override function fetchHoldNoteScale() {
-        return super.fetchHoldNoteScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+        return super.fetchHoldNoteScale() * MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT];
     }
 
     override function getNoteScale() {
-        return super.getNoteScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+        return super.getNoteScale() * MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT];
     }
 
     override function getStrumlineScale() {
-        return super.getStrumlineScale() * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+        return super.getStrumlineScale() * MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT];
     }
 }

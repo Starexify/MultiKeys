@@ -23,7 +23,6 @@ import haxe.ui.containers.HBox;
 import haxe.ui.events.UIEvent;
 
 class MultikeyCompat extends ScriptedModule {
-    var mkHooks:MultikeyHooks;
     var chartEditor:ChartEditorState;
 
     var box:Null<Box>;
@@ -47,7 +46,6 @@ class MultikeyCompat extends ScriptedModule {
 
     function new() {
         super("MultikeyCompat", 1);
-        mkHooks = new MultikeyHooks();
     }
 
     override function onStateChangeEnd(event:StateChangeScriptEvent) {

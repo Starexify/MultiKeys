@@ -13,12 +13,11 @@ import flixel.FlxG;
 
 class MultikeyOptions extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
-    var mkHooks:MultikeyHooks;
 
     var controlsMenu:ControlsMenu;
     var prompt:Prompt;
 
-    var DEFAULT_KEYBINDS:MultikeySaveData = {
+    static var DEFAULT_KEYBINDS:MultikeySaveData = {
         controls: [
             [[32, 0]],
             [[68, 0], [75, 0]],
@@ -34,7 +33,6 @@ class MultikeyOptions extends ScriptedModule {
 
     function new() {
         super("MultikeyOptions", 999);
-        mkHooks = new MultikeyHooks();
         if (!Save.instance.modOptions.exists("multikeys")) Save.instance.modOptions.set("multikeys", DEFAULT_KEYBINDS);
         Save.instance.flush();
     }
@@ -108,7 +106,7 @@ class MultikeyOptions extends ScriptedModule {
 
                         for (key in 0...(i + 1)) {
                             var labelY = y + (newLabelsCount * spacer);
-                            var label = controlsMenu.labels.add(new AtlasText(ControlsMenu.CONTROL_BASE_X, labelY, mkHooks.NOTE_DIRECTION_NAMES[i][key], "bold"));
+                            var label = controlsMenu.labels.add(new AtlasText(ControlsMenu.CONTROL_BASE_X, labelY, MultikeyHooks.NOTE_DIRECTION_NAMES[i][key], "bold"));
                             label.alpha = 0.6;
                             newLabelsCount++;
 

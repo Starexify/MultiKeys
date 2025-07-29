@@ -4,7 +4,7 @@ import funkin.util.Constants;
 
 class MultiKeysMain extends ScriptedModule {
     function new() {
-        super("MultiKeysMain", 0);
+        super("MultiKeysMain");
     }
 
     override function onCreate(event:ScriptEvent) {

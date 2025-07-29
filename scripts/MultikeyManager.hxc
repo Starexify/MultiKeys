@@ -29,7 +29,6 @@ import funkin.util.SerializerUtil;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
-    var mkHooks:MultikeyHooks;
 
     var state:PlayState;
     var keysCount:Int;
@@ -44,7 +43,6 @@ class MultikeyManager extends ScriptedModule {
 
     function new() {
         super("MultikeyManager", FlxMath.MIN_VALUE_INT);
-        mkHooks = new MultikeyHooks();
     }
 
     // Setup Multikey
@@ -92,11 +90,11 @@ class MultikeyManager extends ScriptedModule {
 
         trace("[MultiKeys] Trying to set key count to: " + keyCount + " , set it to: " + Strumline.KEY_COUNT);
 
-        Strumline.STRUMLINE_SIZE = Std.int(104 * mkHooks.NOTE_SCALES[Strumline.KEY_COUNT]);
-        Strumline.NOTE_SPACING = mkHooks.NOTE_GAPS[Strumline.KEY_COUNT];
+        Strumline.STRUMLINE_SIZE = Std.int(104 * MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT]);
+        Strumline.NOTE_SPACING = MultikeyHooks.NOTE_GAPS[Strumline.KEY_COUNT];
         Strumline.DIRECTIONS = [];
         for (i in 0...Strumline.KEY_COUNT) Strumline.DIRECTIONS.push(i);
-        NoteSprite.DIRECTION_COLORS = mkHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT];
+        NoteSprite.DIRECTION_COLORS = MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT];
     }
 
     override function onSongLoaded(event:SongLoadScriptEvent) {
@@ -126,6 +124,7 @@ class MultikeyManager extends ScriptedModule {
 
     override function onUpdate(event:UpdateScriptEvent) {
         // Handle keybinds
+        if (PlayState.instance == null) return;
         if (state == null || state.criticalFailure || PlayState.instance.isGamePaused) return;
         if (Strumline.KEY_COUNT == 4) return;
         for (i in 0...justPressedActions.length) {
@@ -223,7 +222,7 @@ class MultikeyManager extends ScriptedModule {
         var keySets = multikeysOptions.controls[Strumline.KEY_COUNT - 1];
         var i = 0;
         for (keyList in keySets) {
-            var keyName = "multikey_" + StringTools.toLowerKebabCase(mkHooks.NOTE_DIRECTION_NAMES[Strumline.KEY_COUNT - 1][i]);
+            var keyName = "multikey_" + StringTools.toLowerKebabCase(MultikeyHooks.NOTE_DIRECTION_NAMES[Strumline.KEY_COUNT - 1][i]);
             var pressAction = new FlxActionDigital(keyName + "-press");
             //var pressAction = new FunkinAction(keyName + "-press");
             justPressedActions.push(pressAction);
@@ -268,7 +267,7 @@ class MultikeyManager extends ScriptedModule {
         var notesArray = strumline.strumlineNotes.members;
         for (i in 0...totalKeys) {
             if (notesArray[i] != null) {
-                notesArray[i].direction = mkHooks.NOTE_DIRECTIONS[totalKeys][i];
+                notesArray[i].direction = MultikeyHooks.NOTE_DIRECTIONS[totalKeys][i];
                 notesArray[i].x = strumline.x;
                 notesArray[i].x += Strumline.DIRECTIONS[i] * Strumline.NOTE_SPACING;
                 notesArray[i].x -= Strumline.NUDGE;
@@ -310,7 +309,7 @@ class MultikeyManager extends ScriptedModule {
         strumline.strumlineNotes.clear();
 
         strumline.background.scale.x = Std.int(strumline.width / 2 + Strumline.BACKGROUND_PAD);
-        strumline.background.x = strumline.x - Strumline.BACKGROUND_PAD * mkHooks.NOTE_SCALES[totalKeys];
+        strumline.background.x = strumline.x - Strumline.BACKGROUND_PAD * MultikeyHooks.NOTE_SCALES[totalKeys];
         strumline.background.updateHitbox();
 
         for (i in 0...totalKeys) {

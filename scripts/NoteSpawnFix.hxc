@@ -6,13 +6,10 @@ import funkin.play.PlayState;
 import funkin.play.notes.Strumline;
 
 class NoteSpawnFix extends ScriptedModule {
-    var mkHooks:MultikeyHooks;
-
     var state:PlayState;
 
     function new() {
         super("NoteSpawnFix", 1);
-        mkHooks = new MultikeyHooks();
     }
 
     override function onSongLoaded(event:SongLoadScriptEvent) {
@@ -40,7 +37,7 @@ class NoteSpawnFix extends ScriptedModule {
 
         if (event.note.get_isHoldNote()) {
             // Set correct color for Sustain Notes
-            event.note.holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + mkHooks.NOTE_COLORS[mkHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.direction]]));
+            event.note.holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + MultikeyHooks.NOTE_COLORS[MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.direction]]));
             event.note.holdNoteSprite.noteDirection = event.note.direction;
             event.note.holdNoteSprite.graphicWidth = event.note.holdNoteSprite.graphic.width / 8 * event.note.holdNoteSprite.zoom;
             event.note.holdNoteSprite.updateColorTransform();
