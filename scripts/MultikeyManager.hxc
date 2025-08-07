@@ -1,6 +1,7 @@
 import funkin.Preferences;
 import funkin.input.FunkinAction;
 import funkin.input.PreciseInputManager;
+import funkin.modding.PolymodHandler;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.play.PauseSubState;
@@ -13,6 +14,7 @@ import funkin.save.Save;
 import funkin.util.Constants;
 import funkin.util.FileUtilSandboxed;
 import funkin.util.ReflectUtil;
+import funkin.util.SerializerUtil;
 import funkin.util.tools.StringTools;
 
 import flixel.FlxG;
@@ -22,10 +24,7 @@ import flixel.tweens.FlxEase;
 import flixel.tweens.FlxTween;
 
 import Lambda;
-import haxe.Exception;
-import funkin.util.FileUtilSandboxed;
-import funkin.modding.PolymodHandler;
-import funkin.util.SerializerUtil;
+import funkin.mobile.input.ControlsHandler;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
@@ -86,6 +85,7 @@ class MultikeyManager extends ScriptedModule {
 
     function setupMultikey(keyCount:Int) {
         // make sure it isn't outside the range [0, 9]
+        //if (FlxG.onMobile) Preferences.controlsScheme = null;
         if (checkKeys && (Strumline.KEY_COUNT > 9 || Strumline.KEY_COUNT < 1)) Strumline.KEY_COUNT = 4;
 
         trace("[MultiKeys] Trying to set key count to: " + keyCount + " , set it to: " + Strumline.KEY_COUNT);
