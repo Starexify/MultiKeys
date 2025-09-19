@@ -2,7 +2,7 @@ class MultikeyHooks {
     public static var NOTE_SCALES = [1, 1, 1, 1, 1, 0.95, 0.9, 0.85, 0.8, 0.8];
     public static var STRUMLINE_X = [-168, -112, -56, 0, 15, 35, 45, 55, 60];
 
-    public static var NOTE_COLORS = ["purple", "blue", "green", "red", "white", "yellow", "violet", "darkred", "dark"];
+    public static var NOTE_COLORS = ["purple", "blue", "green", "red", "white", "yellow", "violet", "darkred", "darkblue"];
     public static var DIRECTION_NAMES = ["LEFT", "DOWN", "UP", "RIGHT", "SPACE", "LEFT", "DOWN", "UP", "RIGHT"];
 
     public static var NOTE_DIRECTIONS:Array<Array<Int>> = [
@@ -47,9 +47,9 @@ class MultikeyHooks {
         ["purple", "white", "red"],
         ["purple", "blue", "green", "red"],
         ["purple", "blue", "white", "green", "red"],
-        ["purple", "green", "red", "yellow", "blue", "dark"],
-        ["purple", "green", "red", "white", "yellow", "blue", "dark"],
-        ["purple", "blue", "green", "red", "yellow", "violet", "darkred", "dark"],
-        ["purple", "blue", "green", "red", "white", "yellow", "violet", "darkred", "dark"],
+        ["purple", "green", "red", "yellow", "blue", "darkblue"],
+        ["purple", "green", "red", "white", "yellow", "blue", "darkblue"],
+        ["purple", "blue", "green", "red", "yellow", "violet", "darkred", "darkblue"],
+        ["purple", "blue", "green", "red", "white", "yellow", "violet", "darkred", "darkblue"],
     ];
 }

@@ -15,37 +15,37 @@
 	<SubTexture name="blue press0001" x="1512" y="4" width="142" height="140" frameX="-4" frameY="-2" frameWidth="149" frameHeight="146"/>
 	<SubTexture name="blue press0002" x="1658" y="4" width="149" height="146"/>
 	<SubTexture name="blue press0003" x="1658" y="4" width="149" height="146"/>
-	<SubTexture name="dark confirm0000" x="1811" y="4" width="223" height="226" frameX="-1" frameY="-3" frameWidth="226" frameHeight="230"/>
-	<SubTexture name="dark confirm0001" x="4" y="243" width="223" height="226" frameX="-1" frameY="-3" frameWidth="226" frameHeight="230"/>
-	<SubTexture name="dark confirm0002" x="231" y="243" width="226" height="230"/>
-	<SubTexture name="dark confirm0003" x="231" y="243" width="226" height="230"/>
-	<SubTexture name="dark press0000" x="461" y="243" width="138" height="141" frameX="-3" frameY="-7" frameWidth="148" frameHeight="151"/>
-	<SubTexture name="dark press0001" x="461" y="243" width="138" height="141" frameX="-3" frameY="-7" frameWidth="148" frameHeight="151"/>
-	<SubTexture name="dark press0002" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0003" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0004" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0005" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0006" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0007" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0008" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0009" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0010" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0011" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0012" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0013" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0014" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0015" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0016" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0017" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0018" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0019" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0020" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0021" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0022" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0023" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0024" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0025" x="603" y="243" width="148" height="151"/>
-	<SubTexture name="dark press0026" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue confirm0000" x="1811" y="4" width="223" height="226" frameX="-1" frameY="-3" frameWidth="226" frameHeight="230"/>
+	<SubTexture name="darkblue confirm0001" x="4" y="243" width="223" height="226" frameX="-1" frameY="-3" frameWidth="226" frameHeight="230"/>
+	<SubTexture name="darkblue confirm0002" x="231" y="243" width="226" height="230"/>
+	<SubTexture name="darkblue confirm0003" x="231" y="243" width="226" height="230"/>
+	<SubTexture name="darkblue press0000" x="461" y="243" width="138" height="141" frameX="-3" frameY="-7" frameWidth="148" frameHeight="151"/>
+	<SubTexture name="darkblue press0001" x="461" y="243" width="138" height="141" frameX="-3" frameY="-7" frameWidth="148" frameHeight="151"/>
+	<SubTexture name="darkblue press0002" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0003" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0004" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0005" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0006" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0007" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0008" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0009" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0010" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0011" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0012" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0013" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0014" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0015" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0016" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0017" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0018" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0019" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0020" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0021" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0022" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0023" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0024" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0025" x="603" y="243" width="148" height="151"/>
+	<SubTexture name="darkblue press0026" x="603" y="243" width="148" height="151"/>
 	<SubTexture name="darkred confirm0000" x="755" y="243" width="236" height="232"/>
 	<SubTexture name="darkred confirm0001" x="995" y="243" width="236" height="232"/>
 	<SubTexture name="darkred confirm0002" x="1235" y="243" width="214" height="211" frameX="-11" frameY="-10" frameWidth="236" frameHeight="232"/>

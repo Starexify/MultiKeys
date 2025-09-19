@@ -3,7 +3,7 @@
 	<!-- Created with Adobe Animate version 24.0.0.305 -->
 	<!-- http://www.adobe.com/products/animate.html -->
 	<SubTexture name="blue0000" x="4" y="4" width="157" height="154"/>
-	<SubTexture name="dark0000" x="165" y="4" width="154" height="157"/>
+	<SubTexture name="darkblue0000" x="165" y="4" width="154" height="157"/>
 	<SubTexture name="darkred0000" x="323" y="4" width="157" height="154"/>
 	<SubTexture name="green0000" x="4" y="165" width="157" height="154"/>
 	<SubTexture name="purple0000" x="165" y="165" width="154" height="157"/>

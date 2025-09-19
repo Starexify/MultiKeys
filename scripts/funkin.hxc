@@ -1,12 +1,10 @@
+import funkin.data.animation.AnimationData;
 import funkin.data.animation.AnimationDataUtil;
 import funkin.play.notes.NoteHoldCover;
 import funkin.play.notes.NoteSprite;
-import funkin.play.notes.Strumline;
 import funkin.play.notes.notestyle.ScriptedNoteStyle;
+import funkin.play.notes.Strumline;
 import funkin.util.tools.StringTools;
-import funkin.util.assets.FlxAnimationUtil.FlxAnimationUtil.addAtlasAnimations;
-import funkin.util.assets.FlxAnimationUtil;
-import funkin.data.animation.AnimationData;
 
 class FunkinNoteStyle extends ScriptedNoteStyle {
     function new() {
@@ -39,8 +37,8 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     }
 
     override function buildHoldCoverFrameForDirection(direction) {
-        //var atlas = Paths.getSparrowAtlas(holdCoverAssetPath, getAssetLibrary(getHoldCoverDirectionAssetPath(direction, true)));
-        var atlas = Paths.getSparrowAtlas("holdCover" + StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][direction]));
+        var holdCoverAssetPath = "holdCover" + StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][direction]);
+        var atlas = Paths.getSparrowAtlas(holdCoverAssetPath);
         atlas.parent.persist = true;
         return atlas;
     }

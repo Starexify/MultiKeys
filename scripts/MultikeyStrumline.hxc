@@ -13,6 +13,7 @@ import funkin.play.notes.ScriptedStrumline;
 import funkin.play.notes.Strumline;
 import funkin.play.notes.SustainTrail;
 import funkin.util.tools.StringTools;
+import StringTools as StrTools;
 
 class MultikeyStrumline extends ScriptedStrumline {
     public static var DIRECTIONZ:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -34,7 +35,7 @@ class MultikeyStrumline extends ScriptedStrumline {
         background.x -= Strumline.BACKGROUND_PAD * MultikeyHooks.NOTE_SCALES[keyCount];
         background.updateHitbox();
 
-        noteHoldCovers.maxSize = 12;
+        noteHoldCovers.maxSize = keyCount;
     }
 
     function createMultikeyNotes() {
@@ -78,7 +79,7 @@ class MultikeyStrumline extends ScriptedStrumline {
         }
     }
 
-    override public function playNoteHoldCover(holdNote:SustainTrail):Void {
+    override public function playNoteHoldCover(holdNote:SustainTrail) {
         if (!showNotesplash) return;
         if (!noteStyle.isHoldNoteCoverEnabled()) return;
 
@@ -90,11 +91,7 @@ class MultikeyStrumline extends ScriptedStrumline {
 
             var dir = holdNote.noteDirection;
             var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir]);
-            for (anim in cover.glow.animation.getAnimationList()) {
-                if (anim.name == "holdCoverStart" + color) trace(anim.name);
-            }
             cover.glow.animation.play("holdCoverStart" + color);
-            trace(cover.glow);
 
             cover.x = this.x;
             cover.x += dir * NOTE_GAPS[Strumline.KEY_COUNT];
@@ -109,6 +106,45 @@ class MultikeyStrumline extends ScriptedStrumline {
             cover.y += noteStyle.getHoldCoverOffsets()[1] * cover.scale.y;
             cover.y += -96; // hardcoded adjustment, because we are evil.
         }
+    }
+
+    override public function updateNotes() {
+        super.updateNotes();
+
+        for (holdNote in holdNotes.members) {
+            if (holdNote == null || !holdNote.alive) continue;
+            if (holdNote.hitNote && holdNote.sustainLength <= 0) {
+                if (holdNote.cover != null && isPlayer) {
+                    var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][holdNote.noteDirection]);
+                    holdNote.cover.glow.animation.play("holdCoverEnd" + color);
+                } else if (holdNote.cover != null) {
+                    // *lightning* *zap* *crackle*
+                    holdNote.cover.visible = false;
+                    holdNote.cover.kill();
+                }
+            }
+        }
+    }
+
+    override public function constructNoteHoldCover():NoteHoldCover {
+        var result:NoteHoldCover = super.constructNoteHoldCover();
+
+        if (result != null) {
+            result.glow.animation.onFinish.removeAll();
+            result.glow.animation.onFinish.add((animationName:String) -> {
+                if (StrTools.startsWith(animationName, "holdCoverStart")) {
+                    var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][result.holdNote.noteDirection]);
+                    result.glow.animation.play("holdCover" + color);
+                }
+                if (StrTools.startsWith(animationName, "holdCoverEnd")) {
+                    trace(animationName);
+                    result.visible = false;
+                    result.kill();
+                }
+            });
+        }
+
+        return result;
     }
 
     override public function buildNoteSprite(note:SongNoteData):NoteSprite {
