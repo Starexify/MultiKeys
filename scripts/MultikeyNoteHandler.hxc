@@ -5,10 +5,12 @@ import funkin.play.notes.Strumline;
 import funkin.util.tools.StringTools;
 
 import flixel.FlxG;
-import flixel.FlxSprite;
 
 class MultikeyNoteHandler extends ScriptedModule {
-    var state:PlayState;
+    var playState(get, never):PlayState;
+    function get_playState():PlayState {
+        return PlayState.instance;
+    }
 
     // In case you want to handle it yourself you can change this variable !
     var disableCharacterAnims = false;
@@ -18,8 +20,7 @@ class MultikeyNoteHandler extends ScriptedModule {
     }
 
     override function onSongLoaded(event:SongLoadScriptEvent) {
-        if (PlayState.instance == null) return;
-        state = PlayState.instance;
+        if (playState == null) return;
         Strumline.NOTE_SPLASH_CAP = Strumline.KEY_COUNT + 2;
     }
 
@@ -31,17 +32,15 @@ class MultikeyNoteHandler extends ScriptedModule {
     }
 
     override function onUpdate(event:UpdateScriptEvent) {
-        if (state == null || Strumline.KEY_COUNT == 4) return;
-
-        if (!state.isGamePaused) {
-            if (!disableCharacterAnims && state.currentStage != null && state.currentStage.getBoyfriend() != null) {
-                var bf = state.currentStage.getBoyfriend();
+        if (playState == null || Strumline.KEY_COUNT == 4) return;
+        if (!playState.isGamePaused) {
+            if (!disableCharacterAnims && playState.currentStage != null && playState.currentStage.getBoyfriend() != null) {
+                var bf = playState.currentStage.getBoyfriend();
                 if (bf.isSinging()) {
-                    for (holdNote in state.playerStrumline.holdNotes.group.members) {
+                    for (holdNote in playState.playerStrumline.holdNotes.group.members) {
                         // not doing the standard key holding because it looks weird when working with multiple characters on the same strumline
-                        if (holdNote != null && holdNote.alive && holdNote.hitNote && !holdNote.missedNote && holdNote.sustainLength > 0) {
+                        if (holdNote != null && holdNote.alive && holdNote.hitNote && !holdNote.missedNote && holdNote.sustainLength > 0)
                             bf.holdTimer = 0;
-                        }
                     }
                 }
             }
@@ -50,19 +49,19 @@ class MultikeyNoteHandler extends ScriptedModule {
 
     override function onNoteHit(event:HitNoteScriptEvent) {
         if (event.eventCanceled) return;
-        if (state == null) return;
-        if (event.doesNotesplash) playNoteSplash(state.playerStrumline, event.note.noteData.data % Strumline.KEY_COUNT);
+        if (playState == null) return;
+        if (event.doesNotesplash) playNoteSplash(playState.playerStrumline, event.note.noteData.data % Strumline.KEY_COUNT);
 
         var strumIndex = event.note.noteData.getStrumlineIndex(Strumline.KEY_COUNT);
         if (!disableCharacterAnims) {
             var singDir = MultikeyHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.data];
             switch (strumIndex) {
                 case 0:
-                    state.currentStage.getBoyfriend().playSingAnimation(singDir, false);
-                    state.currentStage.getBoyfriend().holdTimer = 0;
+                    playState.currentStage.getBoyfriend().playSingAnimation(singDir, false);
+                    playState.currentStage.getBoyfriend().holdTimer = 0;
                 case 1:
-                    state.currentStage.getDad().playSingAnimation(singDir, false);
-                    state.currentStage.getDad().holdTimer = 0;
+                    playState.currentStage.getDad().playSingAnimation(singDir, false);
+                    playState.currentStage.getDad().holdTimer = 0;
             }
         }
 
@@ -74,15 +73,15 @@ class MultikeyNoteHandler extends ScriptedModule {
 
     override function onNoteMiss(event:NoteScriptEvent) {
         if (event.eventCanceled) return;
-        if (state == null || Strumline.KEY_COUNT == 4) return;
+        if (playState == null || Strumline.KEY_COUNT == 4) return;
         if (!disableCharacterAnims) {
             var strumIndex = event.note.noteData.getStrumlineIndex(Strumline.KEY_COUNT);
             var singDir = MultikeyHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.data];
             switch (strumIndex) {
                 case 0:
-                    state.currentStage.getBoyfriend().playSingAnimation(singDir, true);
+                    playState.currentStage.getBoyfriend().playSingAnimation(singDir, true);
                 case 1:
-                    state.currentStage.getDad().playSingAnimation(singDir, true);
+                    playState.currentStage.getDad().playSingAnimation(singDir, true);
                 case 2:
             }
         }
@@ -90,11 +89,11 @@ class MultikeyNoteHandler extends ScriptedModule {
 
     override function onNoteGhostMiss(event:GhostMissNoteScriptEvent) {
         if (event.eventCanceled) return;
-        if (state == null || Strumline.KEY_COUNT == 4) return;
+        if (playState == null || Strumline.KEY_COUNT == 4) return;
 
         if (!disableCharacterAnims) {
             var singDir = MultikeyHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.dir];
-            state.currentStage.getBoyfriend().playSingAnimation(singDir, true);
+            playState.currentStage.getBoyfriend().playSingAnimation(singDir, true);
         }
     }
 
@@ -151,11 +150,4 @@ class MultikeyNoteHandler extends ScriptedModule {
             cover.y += -96;
         }
     }
-
-    // Cleanup
-    override function onSubStateCloseBegin(event:SubStateScriptEvent) { if (Std.isOfType(event.targetState, PlayState)) state = null; }
-
-    override function onSongEnd(event:ScriptEvent) { state = null; }
-
-    override function onDestroy(event:ScriptEvent) { state = null; }
 }

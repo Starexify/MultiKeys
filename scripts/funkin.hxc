@@ -31,8 +31,8 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
     }
 
     override function buildNoteAnimations(target:NoteSprite) {
-        for (i in 0...MultikeyHooks.NOTE_COLORS.length)
-            target.animation.addByPrefix(MultikeyHooks.NOTE_COLORS[i] + "Scroll", MultikeyHooks.NOTE_COLORS[i]);
+        for (colorName in MultikeyHooks.NOTE_COLORS)
+            target.animation.addByPrefix(colorName + "Scroll", colorName);
     }
 
     override function buildHoldCoverFrameForDirection(direction) {

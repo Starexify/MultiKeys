@@ -1,15 +1,14 @@
+import flixel.FlxG;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.save.Save;
 import funkin.ui.AtlasText;
 import funkin.ui.ButtonStyle;
-import funkin.ui.Prompt;
-import funkin.ui.TextMenuItem;
 import funkin.ui.options.ControlsMenu;
 import funkin.ui.options.OptionsState;
+import funkin.ui.Prompt;
+import funkin.ui.TextMenuItem;
 import funkin.util.InputUtil;
-
-import flixel.FlxG;
 
 class MultikeyOptions extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
@@ -38,134 +37,133 @@ class MultikeyOptions extends ScriptedModule {
     }
 
     override function onStateChangeEnd(event:StateChangeScriptEvent) {
-        if (Std.isOfType(event.targetState, OptionsState)) {
-            // Add Multikey Controls in Controls
-            controlsMenu = event.targetState.optionsCodex.pages.get("controls");
-            if (controlsMenu != null) {
-                prompt = new Prompt("\nPress any key to rebind\n\n\nBackspace to unbind\n    Escape to cancel", ButtonStyle.None);
-                prompt.create();
-                prompt.createBgFromMargin(100, -328339);
-                prompt.back.scrollFactor.set(0, 0);
-                prompt.exists = false;
+        if (!(event.targetState is OptionsState)) return;
+        // Add Multikey Controls in Controls
+        controlsMenu = event.targetState.optionsCodex.pages.get("controls");
+        if (controlsMenu != null) {
+            prompt = new Prompt("\nPress any key to rebind\n\n\nBackspace to unbind\n    Escape to cancel", ButtonStyle.None);
+            prompt.create();
+            prompt.createBgFromMargin(100, -328339);
+            prompt.back.scrollFactor.set(0, 0);
+            prompt.exists = false;
 
-                var labelsToRemove = [];
-                var controlsToRemove = [];
-                var labelCount = 0;
-                for (label in controlsMenu.labels) labelCount++;
+            var labelsToRemove = [];
+            var controlsToRemove = [];
+            var labelCount = 0;
+            for (label in controlsMenu.labels) labelCount++;
 
-                var controlCount = 0;
-                for (control in controlsMenu.controlGrid) controlCount++;
+            var controlCount = 0;
+            for (control in controlsMenu.controlGrid) controlCount++;
 
-                for (i in 0...4)
-                    if (i < labelCount) labelsToRemove.push(controlsMenu.labels.members[i]);
+            for (i in 0...4)
+                if (i < labelCount) labelsToRemove.push(controlsMenu.labels.members[i]);
 
-                for (i in 0...8)
-                    if (i < controlCount) controlsToRemove.push(controlsMenu.controlGrid.members[i]);
+            for (i in 0...8)
+                if (i < controlCount) controlsToRemove.push(controlsMenu.controlGrid.members[i]);
 
-                var labelsToAddBack = [];
-                var controlsToAddBack = [];
+            var labelsToAddBack = [];
+            var controlsToAddBack = [];
 
-                for (i in 0...labelCount) {
-                    var idx = labelCount - 1 - i;
-                    if (idx >= 4) {
-                        var label = controlsMenu.labels.members[idx];
-                        labelsToAddBack.push(label);
-                        controlsMenu.labels.remove(label);
-                    }
+            for (i in 0...labelCount) {
+                var idx = labelCount - 1 - i;
+                if (idx >= 4) {
+                    var label = controlsMenu.labels.members[idx];
+                    labelsToAddBack.push(label);
+                    controlsMenu.labels.remove(label);
                 }
-
-                for (i in 0...controlCount) {
-                    var idx = controlCount - 1 - i;
-                    if (idx >= 8) {
-                        var control = controlsMenu.controlGrid.members[idx];
-                        controlsToAddBack.push(control);
-                        controlsMenu.controlGrid.remove(control);
-                    }
-                }
-                var y = 100;
-                var spacer = 70;
-                var newLabelsCount = 0;
-                var headerY;
-                for (i in 0...9) {
-                    headerY = y + (newLabelsCount - 1) * spacer + 70;
-                    var header = new AtlasText(0, headerY, (i + 1) + " KEY", "default");
-                    header.screenCenter(0x01);
-                    y += spacer;
-                    controlsMenu.add(header);
-                    header.zIndex = 0;
-
-                    if (i != 3) {
-                        if (i == 0) {
-                            for (label in labelsToRemove) {
-                                controlsMenu.labels.remove(label);
-                            }
-                            for (control in controlsToRemove) {
-                                controlsMenu.controlGrid.remove(control);
-                            }
-                        }
-
-                        for (key in 0...(i + 1)) {
-                            var labelY = y + (newLabelsCount * spacer);
-                            var label = controlsMenu.labels.add(new AtlasText(ControlsMenu.CONTROL_BASE_X, labelY, MultikeyHooks.NOTE_DIRECTION_NAMES[i][key], "bold"));
-                            label.alpha = 0.6;
-                            newLabelsCount++;
-
-                            var controls = multikeysOptions.controls[i][key];
-                            var controlsArray = [InputUtil.getKeyName(controls[0]), InputUtil.getKeyName(controls[1])];
-                            for (index in 0...controlsArray.length) if (controls[index] == 0) controlsArray[index] = "---";
-
-                            for (column in 0...2) {
-                                var item = new TextMenuItem(label.x + ControlsMenu.CONTROL_MARGIN_X + column * ControlsMenu.CONTROL_SPACING_X, labelY, controlsArray[column], "default",
-                                () -> selectBind(controlsMenu, i, key, column));
-                                item.fireInstantly = true;
-                                controlsMenu.itemGroups[column].push(item);
-                                controlsMenu.controlGrid.addItem(item.name, item);
-                            }
-                        }
-                    } else {
-                        for (label in labelsToRemove) {
-                            label.y += spacer * (newLabelsCount + 4);
-                            controlsMenu.labels.add(label);
-                        }
-
-                        for (control in controlsToRemove) {
-                            control.y += spacer * (newLabelsCount + 4);
-                            controlsMenu.controlGrid.add(control);
-                        }
-
-                        y += 260;
-                    }
-                }
-
-                var j = 0;
-                for (members in controlsMenu.members[1]) {
-                    if (j > 0)
-                        for (member in members)
-                            if (member.y != null) member.y += spacer * (newLabelsCount + 9);
-                    j++;
-                }
-
-                labelsToAddBack.reverse();
-                controlsToAddBack.reverse();
-                var yOffset = spacer * (newLabelsCount + 9);
-                for (label in labelsToAddBack) {
-                    controlsMenu.labels.add(label);
-                    label.y += yOffset;
-                }
-                for (control in controlsToAddBack) {
-                    controlsMenu.controlGrid.add(control);
-                    control.y += yOffset;
-                }
-
-                controlsMenu.controlGrid.onChange.removeAll();
-                controlsMenu.controlGrid.onChange.add(selected -> {
-                    controlsMenu.camFollow.y = selected.y;
-                    controlsMenu.labels.forEach((label) -> label.alpha = 0.6);
-                    controlsMenu.labels.members[Std.int(controlsMenu.controlGrid.selectedIndex / 2)].alpha = 1.0;
-                });
-
-                controlsMenu.add(prompt);
             }
+
+            for (i in 0...controlCount) {
+                var idx = controlCount - 1 - i;
+                if (idx >= 8) {
+                    var control = controlsMenu.controlGrid.members[idx];
+                    controlsToAddBack.push(control);
+                    controlsMenu.controlGrid.remove(control);
+                }
+            }
+            var y = 100;
+            var spacer = 70;
+            var newLabelsCount = 0;
+            var headerY;
+            for (i in 0...9) {
+                headerY = y + (newLabelsCount - 1) * spacer + 70;
+                var header = new AtlasText(0, headerY, (i + 1) + " KEY", "default");
+                header.screenCenter(0x01);
+                y += spacer;
+                controlsMenu.add(header);
+                header.zIndex = 0;
+
+                if (i != 3) {
+                    if (i == 0) {
+                        for (label in labelsToRemove) {
+                            controlsMenu.labels.remove(label);
+                        }
+                        for (control in controlsToRemove) {
+                            controlsMenu.controlGrid.remove(control);
+                        }
+                    }
+
+                    for (key in 0...(i + 1)) {
+                        var labelY = y + (newLabelsCount * spacer);
+                        var label = controlsMenu.labels.add(new AtlasText(ControlsMenu.CONTROL_BASE_X, labelY, MultikeyHooks.NOTE_DIRECTION_NAMES[i][key], "bold"));
+                        label.alpha = 0.6;
+                        newLabelsCount++;
+
+                        var controls = multikeysOptions.controls[i][key];
+                        var controlsArray = [InputUtil.getKeyName(controls[0]), InputUtil.getKeyName(controls[1])];
+                        for (index in 0...controlsArray.length) if (controls[index] == 0) controlsArray[index] = "---";
+
+                        for (column in 0...2) {
+                            var item = new TextMenuItem(label.x + ControlsMenu.CONTROL_MARGIN_X + column * ControlsMenu.CONTROL_SPACING_X, labelY, controlsArray[column], "default",
+                            () -> selectBind(controlsMenu, i, key, column));
+                            item.fireInstantly = true;
+                            controlsMenu.itemGroups[column].push(item);
+                            controlsMenu.controlGrid.addItem(item.name, item);
+                        }
+                    }
+                } else {
+                    for (label in labelsToRemove) {
+                        label.y += spacer * (newLabelsCount + 4);
+                        controlsMenu.labels.add(label);
+                    }
+
+                    for (control in controlsToRemove) {
+                        control.y += spacer * (newLabelsCount + 4);
+                        controlsMenu.controlGrid.add(control);
+                    }
+
+                    y += 260;
+                }
+            }
+
+            var j = 0;
+            for (members in controlsMenu.members[1]) {
+                if (j > 0)
+                    for (member in members)
+                        if (member.y != null) member.y += spacer * (newLabelsCount + 9);
+                j++;
+            }
+
+            labelsToAddBack.reverse();
+            controlsToAddBack.reverse();
+            var yOffset = spacer * (newLabelsCount + 9);
+            for (label in labelsToAddBack) {
+                controlsMenu.labels.add(label);
+                label.y += yOffset;
+            }
+            for (control in controlsToAddBack) {
+                controlsMenu.controlGrid.add(control);
+                control.y += yOffset;
+            }
+
+            controlsMenu.controlGrid.onChange.removeAll();
+            controlsMenu.controlGrid.onChange.add(selected -> {
+                controlsMenu.camFollow.y = selected.y;
+                controlsMenu.labels.forEach((label) -> label.alpha = 0.6);
+                controlsMenu.labels.members[Std.int(controlsMenu.controlGrid.selectedIndex / 2)].alpha = 1.0;
+            });
+
+            controlsMenu.add(prompt);
         }
     }
 

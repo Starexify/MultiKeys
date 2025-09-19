@@ -1,0 +1,113 @@
+import flixel.math.FlxCallbackPoint;
+import flixel.math.FlxPoint;
+import funkin.data.song.SongData;
+import funkin.play.notes.notekind.NoteKind;
+import funkin.play.notes.notekind.NoteKindManager;
+import funkin.play.notes.NoteSprite;
+import funkin.play.notes.notestyle.NoteStyle;
+import funkin.play.notes.ScriptedStrumline;
+import funkin.play.notes.Strumline;
+import funkin.play.notes.SustainTrail;
+
+class MultikeyStrumline extends ScriptedStrumline {
+    public static var DIRECTIONZ:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
+    public static var NOTE_GAPS:Array<Int> = [112, 112, 112, 112, 112, 95, 85, 80, 70, 65];
+    public static var SIZE:Int = 104;
+
+    public var directions:Array<MultiNoteDirection> = [];
+    public var keyCount:Int;
+
+    public function new(noteStyle:NoteStyle, isPlayer:Bool, keyCount:Int, ?scrollSpeed:Float) {
+        super(noteStyle, isPlayer, scrollSpeed);
+        this.keyCount = keyCount;
+        Strumline.KEY_COUNT = keyCount;
+        SIZE = Std.int(104 * MultikeyHooks.NOTE_SCALES[keyCount]);
+
+        createMultikeyNotes();
+
+        background.scale.x = get_width() / 2 + Strumline.BACKGROUND_PAD * 2;
+        background.x -= Strumline.BACKGROUND_PAD * MultikeyHooks.NOTE_SCALES[keyCount];
+        background.updateHitbox();
+    }
+
+    function createMultikeyNotes() {
+        for (i in 0...keyCount) {
+            directions.push({value: i, keyCount: keyCount});
+
+            var note = strumlineNotes.members[i];
+            note.x = directions[i].value * NOTE_GAPS[keyCount];
+            note.x += Strumline.INITIAL_OFFSET;
+            noteStyle.applyStrumlineOffsets(note);
+        }
+    }
+
+    override public function updateNotes():Void {
+        super.updateNotes();
+    }
+
+    override public function buildNoteSprite(note:SongNoteData):NoteSprite {
+        var noteSprite:NoteSprite = constructNoteSprite();
+        if (noteSprite != null) {
+            var noteKind:NoteKind = NoteKindManager.getNoteKind(note.kind);
+            var noteKindStyle:NoteStyle = NoteKindManager.getNoteStyle(note.kind, this.noteStyle.id) ?? this.noteStyle;
+            noteSprite.setupNoteGraphic(noteKindStyle);
+
+            var trueScale = new FlxPoint(strumlineScale.x, strumlineScale.y);
+
+            noteSprite.scale.x *= trueScale.x;
+            noteSprite.scale.y *= trueScale.y;
+            noteSprite.updateHitbox();
+
+            noteSprite.direction = note.getDirection(Strumline.KEY_COUNT);
+            noteSprite.noteData = note;
+
+            noteSprite.x = this.x;
+            noteSprite.x += noteSprite.direction * NOTE_GAPS[Strumline.KEY_COUNT];
+            noteSprite.x -= Strumline.NUDGE;
+            noteSprite.y = -9999;
+
+            if (noteKind != null) noteSprite.scoreable = noteKind.scoreable;
+        }
+
+        return noteSprite;
+    }
+
+    override public function buildHoldNoteSprite(note:SongNoteData):SustainTrail {
+        var holdNoteSprite:SustainTrail = constructHoldNoteSprite();
+
+        if (holdNoteSprite != null) {
+            var noteKindStyle:NoteStyle = NoteKindManager.getNoteStyle(note.kind, this.noteStyle.id);
+            if (noteKindStyle == null) noteKindStyle = NoteKindManager.getNoteStyle(note.kind, null);
+            if (noteKindStyle == null) noteKindStyle = this.noteStyle;
+
+            holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + MultikeyHooks.NOTE_COLORS[MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][note.getDirection(Strumline.KEY_COUNT)]]));
+
+            holdNoteSprite.parentStrumline = this;
+            holdNoteSprite.noteData = note;
+            holdNoteSprite.strumTime = note.time;
+            holdNoteSprite.noteDirection = note.getDirection(Strumline.KEY_COUNT);
+            holdNoteSprite.fullSustainLength = note.length;
+            holdNoteSprite.sustainLength = note.length;
+            holdNoteSprite.missedNote = false;
+            holdNoteSprite.hitNote = false;
+            holdNoteSprite.visible = true;
+            holdNoteSprite.alpha = 1.0;
+
+            holdNoteSprite.x = this.x;
+            holdNoteSprite.x += holdNoteSprite.noteDirection * NOTE_GAPS[Strumline.KEY_COUNT];
+            holdNoteSprite.x += SIZE / 2;
+            holdNoteSprite.x -= holdNoteSprite.width / 2;
+            holdNoteSprite.y = -9999;
+        }
+
+        return holdNoteSprite;
+    }
+
+    override function get_width():Float {
+        if (strumlineScale == null) strumlineScale = new FlxCallbackPoint(strumlineScaleCallback);
+
+        return keyCount * NOTE_GAPS[keyCount] * noteSpacingScale * strumlineScale.x;
+    }
+}
+
+typedef MultiNoteDirection = {value:Int, keyCount:Int}

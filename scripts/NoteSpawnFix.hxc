@@ -1,20 +1,15 @@
 import funkin.Highscore;
-import funkin.Paths;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.play.PlayState;
 import funkin.play.notes.Strumline;
 
 class NoteSpawnFix extends ScriptedModule {
-    var state:PlayState;
+    var playState(get, never):PlayState;
+    function get_playState():PlayState { return PlayState.instance; }
 
     function new() {
         super("NoteSpawnFix", 1);
-    }
-
-    override function onSongLoaded(event:SongLoadScriptEvent) {
-        if (PlayState.instance == null && Strumline.KEY_COUNT == 4) return;
-        state = PlayState.instance;
     }
 
     override function onCountdownStart(event:CountdownScriptEvent) {
@@ -22,35 +17,12 @@ class NoteSpawnFix extends ScriptedModule {
     }
 
     override function onSongEvent(event:SongEventScriptEvent) {
-        if (event.eventData.eventKind == "KeyCountEvent") {
-            reapplyNoteData();
-        }
-    }
-
-    override function onNoteIncoming(event:NoteScriptEvent) {
-        if (state == null || Strumline.KEY_COUNT == 4) return;
-
-        // Set correct direction for incoming Notes
-        event.note.direction = event.note.noteData.data % Strumline.KEY_COUNT;
-        event.note.x -= PlayState.instance.playerStrumline.getXPos(event.note.noteData.data % 4);
-        event.note.x += Strumline.NOTE_SPACING * event.note.direction;
-
-        if (event.note.get_isHoldNote()) {
-            // Set correct color for Sustain Notes
-            event.note.holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + MultikeyHooks.NOTE_COLORS[MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][event.note.direction]]));
-            event.note.holdNoteSprite.noteDirection = event.note.direction;
-            event.note.holdNoteSprite.graphicWidth = event.note.holdNoteSprite.graphic.width / 8 * event.note.holdNoteSprite.zoom;
-            event.note.holdNoteSprite.updateColorTransform();
-            event.note.holdNoteSprite.updateClipping();
-            event.note.holdNoteSprite.updateHitbox();
-
-            event.note.holdNoteSprite.x = event.note.x + (Strumline.STRUMLINE_SIZE / 2) - (event.note.holdNoteSprite.get_width() / 2);
-        }
+        if (event.eventData.eventKind == "KeyCountEvent") reapplyNoteData();
     }
 
     override function onUpdate(event:UpdateScriptEvent) {
-        if (state == null || Strumline.KEY_COUNT == 4) return;
-        if (state.needsReset) regenNoteData();
+        if (playState == null || Strumline.KEY_COUNT == 4) return;
+        if (playState.needsReset) regenNoteData();
     }
 
     /**
@@ -59,19 +31,21 @@ class NoteSpawnFix extends ScriptedModule {
     function regenNoteData() {
         reapplyNoteData();
 
-        Highscore.tallies.combo = 0;
-        Highscore.tallies.totalNotes = 0;
+        //Highscore.tallies.combo = 0;
+        //Highscore.tallies.totalNotes = 0;
         // Highscore.tallies = new Tallies();
     }
 
+    var playerNoteData = [];
+    var opponentNoteData = [];
     function reapplyNoteData() {
-        cleanStrumline(state.playerStrumline);
-        cleanStrumline(state.opponentStrumline);
+        playState.playerStrumline.clean();
+        playState.opponentStrumline.clean();
 
         // Reset the notes on each strumline.
-        var playerNoteData = [];
-        var opponentNoteData = [];
-        var noteData = state.currentChart.notes;
+        playerNoteData = [];
+        opponentNoteData = [];
+        var noteData = playState.currentChart.notes;
 
         for (songNote in noteData) {
             var strumTime:Float = songNote.time;
@@ -83,38 +57,7 @@ class NoteSpawnFix extends ScriptedModule {
             }
         }
 
-        state.playerStrumline.applyNoteData(playerNoteData);
-        state.opponentStrumline.applyNoteData(opponentNoteData);
+        playState.playerStrumline.applyNoteData(playerNoteData);
+        playState.opponentStrumline.applyNoteData(opponentNoteData);
     }
-
-    function cleanStrumline(strumline:Strumline) {
-        for (note in strumline.notes.members) {
-            if (note == null) continue;
-            strumline.killNote(note);
-        }
-
-        for (holdNote in strumline.holdNotes.members) {
-            if (holdNote == null) continue;
-            holdNote.kill();
-        }
-
-        for (splash in strumline.noteSplashes) {
-            if (splash == null) continue;
-            splash.kill();
-        }
-
-        for (cover in strumline.noteHoldCovers) {
-            if (cover == null) continue;
-            cover.kill();
-        }
-
-        strumline.heldKeys = [false, false, false, false];
-    }
-
-    // Cleanup
-    override function onSubStateCloseBegin(event:SubStateScriptEvent) { if (Std.isOfType(event.targetState, PlayState)) state = null; }
-
-    override function onSongEnd(event:ScriptEvent) { state = null; }
-
-    override function onDestroy(event:ScriptEvent) { state = null; }
 }

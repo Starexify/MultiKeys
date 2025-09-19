@@ -49,7 +49,7 @@ class MultikeyCompat extends ScriptedModule {
     }
 
     override function onStateChangeEnd(event:StateChangeScriptEvent) {
-        if (Std.isOfType(event.targetState, ChartEditorState)) {
+        if (event.targetState is ChartEditorState) {
             chartEditor = event.targetState;
 
             // Add Keys to the Playbar
