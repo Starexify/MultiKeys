@@ -38,7 +38,7 @@ class MultikeyStrumline extends ScriptedStrumline {
         noteHoldCovers.maxSize = keyCount;
     }
 
-    function createMultikeyNotes() {
+    public function createMultikeyNotes() {
         for (i in 0...keyCount) {
             directions.push({value: i, keyCount: keyCount});
 
@@ -49,35 +49,39 @@ class MultikeyStrumline extends ScriptedStrumline {
         }
     }
 
-    override public function playNoteSplash(direction:NoteDirection) {
+    public function playMultiNoteSplash(direction:Int) {
         if (!showNotesplash) return;
         if (!noteStyle.isNoteSplashEnabled()) return;
+
         var splash:NoteSplash = this.constructNoteSplash();
-
         if (splash != null) {
-            if (!splash.animation.exists("splash1white")) {
-                for (i in 0...MultikeyHooks.NOTE_COLORS.length) {
-                    splash.animation.addByPrefix("splash" + MultikeyHooks.NOTE_COLORS[i] + "1", "note impact 1 " + MultikeyHooks.NOTE_COLORS[i] + "0", noteStyle.getSplashFramerate(), false, false, false);
-                    splash.animation.addByPrefix("splash" + MultikeyHooks.NOTE_COLORS[i] + "2", "note impact 2 " + MultikeyHooks.NOTE_COLORS[i] + "0", noteStyle.getSplashFramerate(), false, false, false);
-                }
+            var dir = MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][direction];
+            var colors = MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT];
+            for (color in colors) {
+                splash.animation.addByPrefix("splash" + color + "1", "note impact 1 " + color + "0", noteStyle.getSplashFramerate(), false, false, false);
+                splash.animation.addByPrefix("splash" + color + "2", "note impact 2 " + color + "0", noteStyle.getSplashFramerate(), false, false, false);
             }
-            var direction = MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][direction];
-            var variant = FlxG.random.int(1, 2);
 
-            splash.playAnimation("splash" + MultikeyHooks.NOTE_COLORS[direction] + variant);
+            var animationAmount:Int = splash.animation.getAnimationList().filter((anim) -> return StrTools.startsWith(anim.name, "splash" + colors[direction])).length - 1;
+            var variant = FlxG.random.int(1, animationAmount+1);
+
+            splash.playAnimation("splash" + colors[direction] + variant);
+
             if (splash.animation.curAnim == null) return;
-
-            splash.animation.curAnim.frameRate = noteStyle.getSplashFramerate() + FlxG.random.int(-noteStyle.getSplashFramerateVariance(), noteStyle.getSplashFramerateVariance());
+            splash.animation.curAnim.frameRate = splash.splashFramerate + FlxG.random.int(-splash.splashFramerateVariance, splash.splashFramerateVariance);
             splash.offset.set(splash.width * 0.3, splash.height * 0.3);
 
             splash.x = this.x;
             splash.x += direction * Strumline.NOTE_SPACING;
+            //splash.x += INITIAL_OFFSET;
             splash.x += noteStyle.getSplashOffsets()[0] * splash.scale.x;
 
             splash.y = this.y;
             splash.y += noteStyle.getSplashOffsets()[1] * splash.scale.y;
         }
     }
+
+    override public function playNoteSplash(direction:NoteDirection) {}
 
     override public function playNoteHoldCover(holdNote:SustainTrail) {
         if (!showNotesplash) return;
@@ -137,7 +141,6 @@ class MultikeyStrumline extends ScriptedStrumline {
                     result.glow.animation.play("holdCover" + color);
                 }
                 if (StrTools.startsWith(animationName, "holdCoverEnd")) {
-                    trace(animationName);
                     result.visible = false;
                     result.kill();
                 }

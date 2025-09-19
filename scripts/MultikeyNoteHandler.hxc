@@ -1,9 +1,8 @@
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
-import funkin.play.PlayState;
 import funkin.play.character.BaseCharacter;
 import funkin.play.notes.Strumline;
-import funkin.util.tools.StringTools;
+import funkin.play.PlayState;
 
 class MultikeyNoteHandler extends ScriptedModule {
     var playState(get, never):PlayState;
@@ -19,6 +18,7 @@ class MultikeyNoteHandler extends ScriptedModule {
     }
 
     var bf:BaseCharacter;
+
     override function onUpdate(event:UpdateScriptEvent) {
         if (playState == null || Strumline.KEY_COUNT == 4) return;
         if (!playState.isGamePaused) {
@@ -38,6 +38,7 @@ class MultikeyNoteHandler extends ScriptedModule {
     override function onNoteHit(event:HitNoteScriptEvent) {
         if (event.eventCanceled) return;
         if (playState == null) return;
+        if (event.doesNotesplash) playState.playerStrumline.playMultiNoteSplash(event.note.noteData.data);
 
         var strumIndex = event.note.noteData.getStrumlineIndex(Strumline.KEY_COUNT);
         if (!disableCharacterAnims) {
@@ -51,11 +52,6 @@ class MultikeyNoteHandler extends ScriptedModule {
                     playState.currentStage.getDad().holdTimer = 0;
             }
         }
-
-/*        if (event.note.isHoldNote && event.note.holdNoteSprite != null) {
-            if (strumIndex == 0) playNoteHoldCover(state.playerStrumline, event.note.holdNoteSprite);
-            else playNoteHoldCover(state.opponentStrumline, event.note.holdNoteSprite);
-        }*/
     }
 
     override function onNoteMiss(event:NoteScriptEvent) {
