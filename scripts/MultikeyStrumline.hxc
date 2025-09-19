@@ -1,13 +1,18 @@
+import flixel.FlxG;
 import flixel.math.FlxCallbackPoint;
 import flixel.math.FlxPoint;
 import funkin.data.song.SongData;
+import funkin.play.notes.NoteDirection;
+import funkin.play.notes.NoteHoldCover;
 import funkin.play.notes.notekind.NoteKind;
 import funkin.play.notes.notekind.NoteKindManager;
+import funkin.play.notes.NoteSplash;
 import funkin.play.notes.NoteSprite;
 import funkin.play.notes.notestyle.NoteStyle;
 import funkin.play.notes.ScriptedStrumline;
 import funkin.play.notes.Strumline;
 import funkin.play.notes.SustainTrail;
+import funkin.util.tools.StringTools;
 
 class MultikeyStrumline extends ScriptedStrumline {
     public static var DIRECTIONZ:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -28,6 +33,8 @@ class MultikeyStrumline extends ScriptedStrumline {
         background.scale.x = get_width() / 2 + Strumline.BACKGROUND_PAD * 2;
         background.x -= Strumline.BACKGROUND_PAD * MultikeyHooks.NOTE_SCALES[keyCount];
         background.updateHitbox();
+
+        noteHoldCovers.maxSize = 12;
     }
 
     function createMultikeyNotes() {
@@ -41,8 +48,67 @@ class MultikeyStrumline extends ScriptedStrumline {
         }
     }
 
-    override public function updateNotes():Void {
-        super.updateNotes();
+    override public function playNoteSplash(direction:NoteDirection) {
+        if (!showNotesplash) return;
+        if (!noteStyle.isNoteSplashEnabled()) return;
+        var splash:NoteSplash = this.constructNoteSplash();
+
+        if (splash != null) {
+            if (!splash.animation.exists("splash1white")) {
+                for (i in 0...MultikeyHooks.NOTE_COLORS.length) {
+                    splash.animation.addByPrefix("splash" + MultikeyHooks.NOTE_COLORS[i] + "1", "note impact 1 " + MultikeyHooks.NOTE_COLORS[i] + "0", noteStyle.getSplashFramerate(), false, false, false);
+                    splash.animation.addByPrefix("splash" + MultikeyHooks.NOTE_COLORS[i] + "2", "note impact 2 " + MultikeyHooks.NOTE_COLORS[i] + "0", noteStyle.getSplashFramerate(), false, false, false);
+                }
+            }
+            var direction = MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][direction];
+            var variant = FlxG.random.int(1, 2);
+
+            splash.playAnimation("splash" + MultikeyHooks.NOTE_COLORS[direction] + variant);
+            if (splash.animation.curAnim == null) return;
+
+            splash.animation.curAnim.frameRate = noteStyle.getSplashFramerate() + FlxG.random.int(-noteStyle.getSplashFramerateVariance(), noteStyle.getSplashFramerateVariance());
+            splash.offset.set(splash.width * 0.3, splash.height * 0.3);
+
+            splash.x = this.x;
+            splash.x += direction * Strumline.NOTE_SPACING;
+            splash.x += noteStyle.getSplashOffsets()[0] * splash.scale.x;
+
+            splash.y = this.y;
+            splash.y += noteStyle.getSplashOffsets()[1] * splash.scale.y;
+        }
+    }
+
+    override public function playNoteHoldCover(holdNote:SustainTrail):Void {
+        if (!showNotesplash) return;
+        if (!noteStyle.isHoldNoteCoverEnabled()) return;
+
+        var cover:NoteHoldCover = this.constructNoteHoldCover();
+        if (cover != null) {
+            cover.holdNote = holdNote;
+            holdNote.cover = cover;
+            cover.visible = true;
+
+            var dir = holdNote.noteDirection;
+            var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir]);
+            for (anim in cover.glow.animation.getAnimationList()) {
+                if (anim.name == "holdCoverStart" + color) trace(anim.name);
+            }
+            cover.glow.animation.play("holdCoverStart" + color);
+            trace(cover.glow);
+
+            cover.x = this.x;
+            cover.x += dir * NOTE_GAPS[Strumline.KEY_COUNT];
+            cover.x += SIZE / 2;
+            cover.x -= cover.width / 2;
+            cover.x += noteStyle.getHoldCoverOffsets()[0] * cover.scale.x;
+            cover.x += -12; // hardcoded adjustment, because we are evil.
+
+            cover.y = this.y;
+            cover.y += Strumline.INITIAL_OFFSET;
+            cover.y += SIZE / 2;
+            cover.y += noteStyle.getHoldCoverOffsets()[1] * cover.scale.y;
+            cover.y += -96; // hardcoded adjustment, because we are evil.
+        }
     }
 
     override public function buildNoteSprite(note:SongNoteData):NoteSprite {

@@ -4,6 +4,9 @@ import funkin.play.notes.NoteSprite;
 import funkin.play.notes.Strumline;
 import funkin.play.notes.notestyle.ScriptedNoteStyle;
 import funkin.util.tools.StringTools;
+import funkin.util.assets.FlxAnimationUtil.FlxAnimationUtil.addAtlasAnimations;
+import funkin.util.assets.FlxAnimationUtil;
+import funkin.data.animation.AnimationData;
 
 class FunkinNoteStyle extends ScriptedNoteStyle {
     function new() {
@@ -42,36 +45,13 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         return atlas;
     }
 
-    override function buildHoldCoverSprite(target:NoteHoldCover) {
-        // NoteHoldCover has "glow" and "sparks". Right now it only implements "glow"
-        // but "sparks" I believe is meant to be used for the ending of the hold note
-        var glowAtlas = buildHoldCoverFrames(false);
-        if (glowAtlas == null) throw "Could not load spritesheet for note style: " + id;
-        target.glow.frames = glowAtlas;
-
-        target.antialiasing = !(_data.assets.holdNoteCover?.isPixel ?? false);
-        target.glow.antialiasing = !(_data.assets.holdNoteCover?.isPixel ?? false);
-        target.scale.set(getHoldCoverScale(), getHoldCoverScale());
-        target.updateHitbox();
-        target.glow.updateHitbox();
-
+    override function buildHoldCoverAnimations(target:NoteHoldCover) {
         for (direction in 0...Strumline.KEY_COUNT) {
             var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][direction]);
-            target.glow.animation.addByPrefix("holdCoverStart" + color, "holdCoverStart" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT, false);
-            target.glow.animation.addByPrefix("holdCover" + color, "holdCover" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT);
-            target.glow.animation.addByPrefix("holdCoverEnd" + color, "holdCoverEnd" + color + "0", NoteHoldCover.FRAMERATE_DEFAULT, false);
+            target.glow.animation.addByPrefix("holdCoverStart" + color, "holdCoverStart" + color, NoteHoldCover.FRAMERATE_DEFAULT, false);
+            target.glow.animation.addByPrefix("holdCover" + color, "holdCover" + color, NoteHoldCover.FRAMERATE_DEFAULT);
+            target.glow.animation.addByPrefix("holdCoverEnd" + color, "holdCoverEnd" + color, NoteHoldCover.FRAMERATE_DEFAULT, false);
         }
-    }
-
-    // Enabling
-    override function isHoldNoteCoverEnabled() {
-        if (!super.isHoldNoteCoverEnabled()) return false;
-        return Strumline.KEY_COUNT == 4;
-    }
-
-    override function isNoteSplashEnabled() {
-        if (!super.isNoteSplashEnabled()) return false;
-        return Strumline.KEY_COUNT == 4;
     }
 
     // Scaling

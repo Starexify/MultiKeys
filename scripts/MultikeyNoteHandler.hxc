@@ -1,41 +1,29 @@
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.play.PlayState;
+import funkin.play.character.BaseCharacter;
 import funkin.play.notes.Strumline;
 import funkin.util.tools.StringTools;
 
-import flixel.FlxG;
-
 class MultikeyNoteHandler extends ScriptedModule {
     var playState(get, never):PlayState;
-    function get_playState():PlayState {
-        return PlayState.instance;
-    }
+
+    function get_playState():PlayState { return PlayState.instance; }
 
     // In case you want to handle it yourself you can change this variable !
     var disableCharacterAnims = false;
 
-    function new() {
-        super("MultikeyNoteHandler");
-    }
-
     override function onSongLoaded(event:SongLoadScriptEvent) {
         if (playState == null) return;
-        Strumline.NOTE_SPLASH_CAP = Strumline.KEY_COUNT + 2;
+        Strumline.NOTE_SPLASH_CAP = 12;
     }
 
-    override function onSongEvent(event:SongEventScriptEvent) {
-        if (event.eventData.eventKind == "KeyCountEvent") {
-            //reinitHoldCovers(state.playerStrumline, event.eventData.value?.keyCount);
-            //reinitHoldCovers(state.opponentStrumline, event.eventData.value?.keyCount);
-        }
-    }
-
+    var bf:BaseCharacter;
     override function onUpdate(event:UpdateScriptEvent) {
         if (playState == null || Strumline.KEY_COUNT == 4) return;
         if (!playState.isGamePaused) {
             if (!disableCharacterAnims && playState.currentStage != null && playState.currentStage.getBoyfriend() != null) {
-                var bf = playState.currentStage.getBoyfriend();
+                bf = playState.currentStage.getBoyfriend();
                 if (bf.isSinging()) {
                     for (holdNote in playState.playerStrumline.holdNotes.group.members) {
                         // not doing the standard key holding because it looks weird when working with multiple characters on the same strumline
@@ -50,7 +38,6 @@ class MultikeyNoteHandler extends ScriptedModule {
     override function onNoteHit(event:HitNoteScriptEvent) {
         if (event.eventCanceled) return;
         if (playState == null) return;
-        if (event.doesNotesplash) playNoteSplash(playState.playerStrumline, event.note.noteData.data % Strumline.KEY_COUNT);
 
         var strumIndex = event.note.noteData.getStrumlineIndex(Strumline.KEY_COUNT);
         if (!disableCharacterAnims) {
@@ -78,10 +65,8 @@ class MultikeyNoteHandler extends ScriptedModule {
             var strumIndex = event.note.noteData.getStrumlineIndex(Strumline.KEY_COUNT);
             var singDir = MultikeyHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.note.noteData.data];
             switch (strumIndex) {
-                case 0:
-                    playState.currentStage.getBoyfriend().playSingAnimation(singDir, true);
-                case 1:
-                    playState.currentStage.getDad().playSingAnimation(singDir, true);
+                case 0: playState.currentStage.getBoyfriend().playSingAnimation(singDir, true);
+                case 1: playState.currentStage.getDad().playSingAnimation(singDir, true);
                 case 2:
             }
         }
@@ -94,60 +79,6 @@ class MultikeyNoteHandler extends ScriptedModule {
         if (!disableCharacterAnims) {
             var singDir = MultikeyHooks.NOTE_DIRECTIONS[Strumline.KEY_COUNT][event.dir];
             playState.currentStage.getBoyfriend().playSingAnimation(singDir, true);
-        }
-    }
-
-    // Methods for note anims
-    function playNoteSplash(strumline:Strumline, dir) {
-        if (!strumline.showNotesplash) return;
-        var splash = strumline.constructNoteSplash();
-        if (splash != null) {
-            if (!splash.animation.exists("splash1white")) {
-                for (i in 0...MultikeyHooks.NOTE_COLORS.length) {
-                    splash.animation.addByPrefix("splash" + MultikeyHooks.NOTE_COLORS[i] + "1", "note impact 1 " + MultikeyHooks.NOTE_COLORS[i] + "0", strumline.noteStyle.getSplashFramerate(), false, false, false);
-                    splash.animation.addByPrefix("splash" + MultikeyHooks.NOTE_COLORS[i] + "2", "note impact 2 " + MultikeyHooks.NOTE_COLORS[i] + "0", strumline.noteStyle.getSplashFramerate(), false, false, false);
-                }
-            }
-            var direction = MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][dir];
-
-            var variant = FlxG.random.int(1, 2);
-            splash.playAnimation("splash" + MultikeyHooks.NOTE_COLORS[direction] + variant);
-            if (splash.animation.curAnim == null) return;
-            splash.animation.curAnim.frameRate = strumline.noteStyle.getSplashFramerate() + FlxG.random.int(-strumline.noteStyle.getSplashFramerateVariance(), strumline.noteStyle.getSplashFramerateVariance());
-            splash.offset.set(splash.width * 0.3, splash.height * 0.3);
-
-            splash.x = strumline.x;
-            splash.x += dir * Strumline.NOTE_SPACING;
-            splash.x += strumline.noteStyle.getSplashOffsets()[0] * splash.scale.x;
-
-            splash.y = strumline.y;
-            splash.y += strumline.noteStyle.getSplashOffsets()[1] * splash.scale.y;
-        }
-    }
-
-    function playNoteHoldCover(strumline:Strumline, holdNote) {
-        if (!strumline.showNotesplash) return;
-        var cover = strumline.constructNoteHoldCover();
-        if (cover != null) {
-            cover.holdNote = holdNote;
-            holdNote.cover = cover;
-
-            var dir = holdNote.noteDirection;
-            var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][dir]);
-            cover.glow.animation.play("holdCoverStart" + color);
-            //trace(cover.glow.animation.name + " " + dir);
-
-            cover.x = strumline.x;
-            cover.x += dir * Strumline.NOTE_SPACING;
-            cover.x += Strumline.STRUMLINE_SIZE / 2;
-            cover.x -= cover.width / 2;
-            cover.x += strumline.noteStyle.getHoldCoverOffsets()[0] * cover.scale.x;
-            cover.x += -12;
-
-            cover.y = strumline.y;
-            cover.y += Strumline.STRUMLINE_SIZE / 2;
-            cover.y += strumline.noteStyle.getHoldCoverOffsets()[1] * cover.scale.y;
-            cover.y += -96;
         }
     }
 }
