@@ -55,9 +55,8 @@ class MultikeyStrumline extends ScriptedStrumline {
 
         var splash:NoteSplash = this.constructNoteSplash();
         if (splash != null) {
-            var dir = MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][direction];
             var colors = MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT];
-            for (color in colors) {
+            for (color in MultikeyHooks.NOTE_COLORS) {
                 splash.animation.addByPrefix("splash" + color + "1", "note impact 1 " + color + "0", noteStyle.getSplashFramerate(), false, false, false);
                 splash.animation.addByPrefix("splash" + color + "2", "note impact 2 " + color + "0", noteStyle.getSplashFramerate(), false, false, false);
             }
@@ -72,8 +71,7 @@ class MultikeyStrumline extends ScriptedStrumline {
             splash.offset.set(splash.width * 0.3, splash.height * 0.3);
 
             splash.x = this.x;
-            splash.x += direction * Strumline.NOTE_SPACING;
-            //splash.x += INITIAL_OFFSET;
+            splash.x += direction * NOTE_GAPS[Strumline.KEY_COUNT];
             splash.x += noteStyle.getSplashOffsets()[0] * splash.scale.x;
 
             splash.y = this.y;
