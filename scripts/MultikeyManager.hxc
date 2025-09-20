@@ -1,11 +1,14 @@
+import flixel.FlxG;
+import flixel.input.actions.FlxActionDigital;
+import flixel.math.FlxMath;
 import funkin.input.PreciseInputManager;
-import funkin.modding.PolymodHandler;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
-import funkin.play.PauseSubState;
-import funkin.play.PlayState;
+import funkin.modding.PolymodHandler;
 import funkin.play.notes.NoteSprite;
 import funkin.play.notes.Strumline;
+import funkin.play.PauseSubState;
+import funkin.play.PlayState;
 import funkin.play.song.ScriptedSong;
 import funkin.save.Save;
 import funkin.util.FileUtilSandboxed;
@@ -13,16 +16,13 @@ import funkin.util.ReflectUtil;
 import funkin.util.SerializerUtil;
 import funkin.util.tools.StringTools;
 
-import flixel.FlxG;
-import flixel.input.actions.FlxActionDigital;
-import flixel.math.FlxMath;
-
 using Lambda;
 
 class MultikeyManager extends ScriptedModule {
     var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
 
     var playState(get, never):PlayState;
+
     function get_playState():PlayState { return PlayState.instance; }
 
     var keysCount:Int;
@@ -44,17 +44,17 @@ class MultikeyManager extends ScriptedModule {
 
     // Setup Multikey
     override function onStateChangeBegin(event:StateChangeScriptEvent) {
-        FlxG.signals.preStateCreate.addOnce(onStateChange);
+        FlxG.signals.preStateCreate.addOnce(onSubStateChange);
     }
 
     override function onSubStateOpenBegin(event:SubStateScriptEvent) {
         if (event.targetState is PauseSubState) return;
 
         if (!(event.targetState is PlayState)) cleanup();
-        onStateChange(event.targetState);
+        onSubStateChange(event.targetState);
     }
 
-    function onStateChange(nextState:PlayState) {
+    function onSubStateChange(nextState:PlayState) {
         if (nextState is PlayState) {
             var keyCount = 4;
             var metadataPath = buildMetadataPath(nextState);
@@ -98,28 +98,31 @@ class MultikeyManager extends ScriptedModule {
         if (playState == null) return;
 
         // Strumlines
-        playerStrum = new MultikeyStrumline(playState.playerStrumline.noteStyle, !playState.isBotPlayMode, keysCount, playState.currentChart?.scrollSpeed);
-        opponentStrum = new MultikeyStrumline(playState.opponentStrumline.noteStyle, false, keysCount, playState.currentChart?.scrollSpeed);
+        playerStrum = createMultikeyStrumline(playState.playerStrumline, keysCount, !playState.isBotPlayMode);
+        opponentStrum = createMultikeyStrumline(playState.opponentStrumline, keysCount, false);
 
-        playerStrum.x = playState.playerStrumline.x;
-        playerStrum.y = playState.playerStrumline.y;
-        opponentStrum.x = playState.opponentStrumline.x;
-        opponentStrum.y = playState.opponentStrumline.y;
-        playerStrum.cameras = playState.playerStrumline.cameras;
-        opponentStrum.cameras = playState.opponentStrumline.cameras;
-
-        playState.playerStrumline.clean();
         playState.playerStrumline.clear();
-        playState.opponentStrumline.clean();
         playState.opponentStrumline.clear();
 
         playState.playerStrumline = playerStrum;
         playState.opponentStrumline = opponentStrum;
-        playState.add(playerStrum);
-        playState.add(opponentStrum);
+        playState.add(playState.playerStrumline);
+        playState.add(playState.opponentStrumline);
 
         playState.playerStrumline.fadeInArrows();
         playState.opponentStrumline.fadeInArrows();
+    }
+
+    function createMultikeyStrumline(strumline:Strumline, keysCount:Int, isPlayer:Bool):MultikeyStrumline {
+        var newStrum = new MultikeyStrumline(strumline.noteStyle, isPlayer, keysCount, playState.currentChart?.scrollSpeed);
+
+        newStrum.x = strumline.x;
+        newStrum.y = strumline.y;
+        newStrum.cameras = strumline.cameras;
+
+        strumline.clean();
+
+        return newStrum;
     }
 
     override function onSongEvent(event:SongEventScriptEvent) {
@@ -158,6 +161,7 @@ class MultikeyManager extends ScriptedModule {
     var releaseInput:PreciseInputEvent;
     var targetNote:Null<NoteSprite>;
     var notesInDirection:Array<NoteSprite>;
+
     function processInputQueue() {
         if (inputPressQueue.length + inputReleaseQueue.length == 0) return;
 
@@ -265,7 +269,7 @@ class MultikeyManager extends ScriptedModule {
         return state.currentVariation == "default" ? basePath : basePath + "-" + state.currentVariation;
     }
 
-    function readKeyCount(path):Null<Dynamic> {
+    function readKeyCount(path):Null<MultiMeta> {
         for (mods in PolymodHandler.getAllModIds()) {
             var filePath = "mods/" + mods + "/" + path + ".json";
             if (FileUtilSandboxed.fileExists(filePath)) return FileUtilSandboxed.readJSONFromPath(filePath);
@@ -275,7 +279,7 @@ class MultikeyManager extends ScriptedModule {
 
     function handleScriptedSongSetup() {
         var targetSong = PlayState.lastParams?.targetSong;
-        if (!Std.isOfType(targetSong, ScriptedSong)) return;
+        if (!(targetSong is ScriptedSong)) return;
         var check = targetSong.scriptGet("findFunction");
 
         if (check("setupMultikey") != null) targetSong.scriptCall("setupMultikey", []);
@@ -293,3 +297,5 @@ class MultikeyManager extends ScriptedModule {
         PreciseInputManager.instance.onInputReleased.removeAll();
     }
 }
+
+typedef MultiMeta = {keyCounts:{variation:Map<String, Map<String, Int>>}}

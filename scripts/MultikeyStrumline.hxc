@@ -19,6 +19,7 @@ class MultikeyStrumline extends ScriptedStrumline {
     public static var DIRECTIONZ:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
     public static var NOTE_GAPS:Array<Int> = [112, 112, 112, 112, 112, 95, 85, 80, 70, 65];
     public static var SIZE:Int = 104;
+    public static var OFFSET:Float = -0.275 * SIZE;
 
     public var directions:Array<MultiNoteDirection> = [];
     public var keyCount:Int;
@@ -28,6 +29,7 @@ class MultikeyStrumline extends ScriptedStrumline {
         this.keyCount = keyCount;
         Strumline.KEY_COUNT = keyCount;
         SIZE = Std.int(104 * MultikeyHooks.NOTE_SCALES[keyCount]);
+        OFFSET = -0.275 * SIZE;
 
         createMultikeyNotes();
 
@@ -44,8 +46,42 @@ class MultikeyStrumline extends ScriptedStrumline {
 
             var note = strumlineNotes.members[i];
             note.x = directions[i].value * NOTE_GAPS[keyCount];
-            note.x += Strumline.INITIAL_OFFSET;
+            note.x += OFFSET;
             noteStyle.applyStrumlineOffsets(note);
+        }
+    }
+
+    override public function refresh() {
+        super.refresh();
+    }
+
+    override public function updateNotes() {
+        super.updateNotes();
+
+        for (holdNote in holdNotes.members) {
+            if (holdNote == null || !holdNote.alive) continue;
+
+            if (holdNote.hitNote && holdNote.sustainLength <= 0) {
+                if (holdNote.cover != null && isPlayer) {
+                    var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][holdNote.noteDirection]);
+                    holdNote.cover.glow.animation.play("holdCoverEnd" + color);
+                } else if (holdNote.cover != null) {
+                    // *lightning* *zap* *crackle*
+                    holdNote.cover.visible = false;
+                    holdNote.cover.kill();
+                }
+            }
+
+            if (conductorInUse.songPosition > holdNote.strumTime && holdNote.hitNote) {
+                holdNote.sustainLength = (holdNote.strumTime + holdNote.fullSustainLength) - conductorInUse.songPosition;
+                if (!customPositionData) {
+                    if (isDownscroll) {
+                        holdNote.y = this.y - Strumline.INITIAL_OFFSET + 20 - holdNote.height + SIZE / 2;
+                    } else {
+                        holdNote.y = this.y - Strumline.INITIAL_OFFSET + SIZE / 2;
+                    }
+                }
+            }
         }
     }
 
@@ -103,28 +139,9 @@ class MultikeyStrumline extends ScriptedStrumline {
             cover.x += -12; // hardcoded adjustment, because we are evil.
 
             cover.y = this.y;
-            cover.y += Strumline.INITIAL_OFFSET;
             cover.y += SIZE / 2;
             cover.y += noteStyle.getHoldCoverOffsets()[1] * cover.scale.y;
             cover.y += -96; // hardcoded adjustment, because we are evil.
-        }
-    }
-
-    override public function updateNotes() {
-        super.updateNotes();
-
-        for (holdNote in holdNotes.members) {
-            if (holdNote == null || !holdNote.alive) continue;
-            if (holdNote.hitNote && holdNote.sustainLength <= 0) {
-                if (holdNote.cover != null && isPlayer) {
-                    var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][holdNote.noteDirection]);
-                    holdNote.cover.glow.animation.play("holdCoverEnd" + color);
-                } else if (holdNote.cover != null) {
-                    // *lightning* *zap* *crackle*
-                    holdNote.cover.visible = false;
-                    holdNote.cover.kill();
-                }
-            }
         }
     }
 
