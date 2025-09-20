@@ -72,6 +72,17 @@ class MultikeyStrumline extends ScriptedStrumline {
                     holdNote.cover.kill();
                 }
             }
+
+            if (conductorInUse.songPosition > holdNote.strumTime && holdNote.hitNote) {
+                if (!customPositionData) {
+                    if (isDownscroll) {
+                        holdNote.y = this.y - Strumline.INITIAL_OFFSET - holdNote.height + SIZE / 2;
+                    } else {
+                        holdNote.y = this.y - Strumline.INITIAL_OFFSET + SIZE / 2;
+                    }
+                    holdNote.y += 20;
+                }
+            }
         }
     }
 
@@ -126,12 +137,12 @@ class MultikeyStrumline extends ScriptedStrumline {
             cover.x += SIZE / 2;
             cover.x -= cover.width / 2;
             cover.x += noteStyle.getHoldCoverOffsets()[0] * cover.scale.x;
-            cover.x += -12; // hardcoded adjustment, because we are evil.
+            cover.x += -12 * cover.scale.x; // hardcoded adjustment, because we are evil.
 
             cover.y = this.y;
             cover.y += SIZE / 2;
             cover.y += noteStyle.getHoldCoverOffsets()[1] * cover.scale.y;
-            cover.y += -96; // hardcoded adjustment, because we are evil.
+            cover.y += -96 * cover.scale.y; // hardcoded adjustment, because we are evil.
         }
     }
 
@@ -166,6 +177,7 @@ class MultikeyStrumline extends ScriptedStrumline {
         var holdNoteSprite = super.buildHoldNoteSprite(note);
 
         holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + MultikeyHooks.NOTE_COLORS[MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][note.getDirection(Strumline.KEY_COUNT)]]));
+        holdNoteSprite.updateColorTransform();
         holdNoteSprite.updateClipping();
         holdNoteSprite.updateHitbox();
 
@@ -175,6 +187,7 @@ class MultikeyStrumline extends ScriptedStrumline {
         holdNoteSprite.x += holdNoteSprite.noteDirection * NOTE_GAPS[Strumline.KEY_COUNT];
         holdNoteSprite.x += SIZE / 2;
         holdNoteSprite.x -= holdNoteSprite.width / 2;
+        holdNoteSprite.yOffset *= MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT] ;
 
         return holdNoteSprite;
     }

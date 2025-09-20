@@ -124,10 +124,10 @@ class MultikeyManager extends ScriptedModule {
         newStrum.cameras = strumline.cameras;
         if (!(strumline is ScriptedStrumline)) {
             var xOffset = Constants.STRUMLINE_X_OFFSET * MultikeyHooks.NOTE_SCALES[keysCount];
-            newStrum.x += Preferences.downscroll ? -xOffset : xOffset;
+            newStrum.x -= xOffset;
             if (keysCount > 8 && isPlayer) newStrum.x += 9;
             var yOffset = Constants.STRUMLINE_Y_OFFSET * MultikeyHooks.NOTE_SCALES[keysCount];
-            newStrum.y += Preferences.downscroll ? -yOffset : yOffset;
+            newStrum.y -= yOffset;
         }
 
         strumline.clean();

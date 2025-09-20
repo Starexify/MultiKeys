@@ -1,3 +1,4 @@
+import flixel.graphics.frames.FlxFramesCollection;
 import funkin.data.animation.AnimationData;
 import funkin.data.animation.AnimationDataUtil;
 import funkin.play.notes.NoteHoldCover;
@@ -52,9 +53,26 @@ class FunkinNoteStyle extends ScriptedNoteStyle {
         }
     }
 
+    override public function buildHoldCoverSprite(target:NoteHoldCover) {
+        // NoteHoldCover has "glow" and "sparks". Right now it only implements "glow"
+        // but "sparks" I believe is meant to be used for the ending of the hold note
+        var glowAtlas:Null<FlxFramesCollection> = buildHoldCoverFrames(false);
+        if (glowAtlas == null) throw "Could not load spritesheet for note style: " + id;
+
+        target.glow.frames = glowAtlas;
+
+        target.antialiasing = !(_data.assets.holdNoteCover?.isPixel ?? false);
+        target.glow.antialiasing = !(_data.assets.holdNoteCover?.isPixel ?? false);
+        target.scale.set(getHoldCoverScale(), getHoldCoverScale());
+        target.updateHitbox();
+        target.glow.updateHitbox();
+
+        buildHoldCoverAnimations(target);
+    }
+
     // Scaling
     function getHoldCoverScale() {
-        return _data.assets.holdNoteCover?.scale ?? 1.0 * MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+        return (_data.assets.holdNoteCover?.scale * MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT]) ?? fallback?.fetchHoldNoteScale() ?? 1.0;
     }
 
     override function fetchHoldNoteScale() {
