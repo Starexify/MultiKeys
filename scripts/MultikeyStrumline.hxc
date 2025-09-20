@@ -58,6 +58,7 @@ class MultikeyStrumline extends ScriptedStrumline {
     override public function updateNotes() {
         super.updateNotes();
 
+        // Fix hold covers not playing animations
         for (holdNote in holdNotes.members) {
             if (holdNote == null || !holdNote.alive) continue;
 
@@ -69,17 +70,6 @@ class MultikeyStrumline extends ScriptedStrumline {
                     // *lightning* *zap* *crackle*
                     holdNote.cover.visible = false;
                     holdNote.cover.kill();
-                }
-            }
-
-            if (conductorInUse.songPosition > holdNote.strumTime && holdNote.hitNote) {
-                holdNote.sustainLength = (holdNote.strumTime + holdNote.fullSustainLength) - conductorInUse.songPosition;
-                if (!customPositionData) {
-                    if (isDownscroll) {
-                        holdNote.y = this.y - Strumline.INITIAL_OFFSET + 20 - holdNote.height + SIZE / 2;
-                    } else {
-                        holdNote.y = this.y - Strumline.INITIAL_OFFSET + SIZE / 2;
-                    }
                 }
             }
         }
@@ -98,7 +88,7 @@ class MultikeyStrumline extends ScriptedStrumline {
             }
 
             var animationAmount:Int = splash.animation.getAnimationList().filter((anim) -> return StrTools.startsWith(anim.name, "splash" + colors[direction])).length - 1;
-            var variant = FlxG.random.int(1, animationAmount+1);
+            var variant = FlxG.random.int(1, animationAmount + 1);
 
             splash.playAnimation("splash" + colors[direction] + variant);
 
@@ -145,26 +135,6 @@ class MultikeyStrumline extends ScriptedStrumline {
         }
     }
 
-    override public function constructNoteHoldCover():NoteHoldCover {
-        var result:NoteHoldCover = super.constructNoteHoldCover();
-
-        if (result != null) {
-            result.glow.animation.onFinish.removeAll();
-            result.glow.animation.onFinish.add((animationName:String) -> {
-                if (StrTools.startsWith(animationName, "holdCoverStart")) {
-                    var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][result.holdNote.noteDirection]);
-                    result.glow.animation.play("holdCover" + color);
-                }
-                if (StrTools.startsWith(animationName, "holdCoverEnd")) {
-                    result.visible = false;
-                    result.kill();
-                }
-            });
-        }
-
-        return result;
-    }
-
     override public function buildNoteSprite(note:SongNoteData):NoteSprite {
         var noteSprite:NoteSprite = constructNoteSprite();
         if (noteSprite != null) {
@@ -193,34 +163,47 @@ class MultikeyStrumline extends ScriptedStrumline {
     }
 
     override public function buildHoldNoteSprite(note:SongNoteData):SustainTrail {
-        var holdNoteSprite:SustainTrail = constructHoldNoteSprite();
+        var holdNoteSprite = super.buildHoldNoteSprite(note);
 
-        if (holdNoteSprite != null) {
-            var noteKindStyle:NoteStyle = NoteKindManager.getNoteStyle(note.kind, this.noteStyle.id);
-            if (noteKindStyle == null) noteKindStyle = NoteKindManager.getNoteStyle(note.kind, null);
-            if (noteKindStyle == null) noteKindStyle = this.noteStyle;
+        holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + MultikeyHooks.NOTE_COLORS[MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][note.getDirection(Strumline.KEY_COUNT)]]));
+        holdNoteSprite.updateClipping();
+        holdNoteSprite.updateHitbox();
 
-            holdNoteSprite.loadGraphic(Paths.image("NOTE_hold_assets_" + MultikeyHooks.NOTE_COLORS[MultikeyHooks.MULTIKEY_DIRECTIONS[Strumline.KEY_COUNT][note.getDirection(Strumline.KEY_COUNT)]]));
+        holdNoteSprite.noteDirection = note.getDirection(Strumline.KEY_COUNT);
 
-            holdNoteSprite.parentStrumline = this;
-            holdNoteSprite.noteData = note;
-            holdNoteSprite.strumTime = note.time;
-            holdNoteSprite.noteDirection = note.getDirection(Strumline.KEY_COUNT);
-            holdNoteSprite.fullSustainLength = note.length;
-            holdNoteSprite.sustainLength = note.length;
-            holdNoteSprite.missedNote = false;
-            holdNoteSprite.hitNote = false;
-            holdNoteSprite.visible = true;
-            holdNoteSprite.alpha = 1.0;
-
-            holdNoteSprite.x = this.x;
-            holdNoteSprite.x += holdNoteSprite.noteDirection * NOTE_GAPS[Strumline.KEY_COUNT];
-            holdNoteSprite.x += SIZE / 2;
-            holdNoteSprite.x -= holdNoteSprite.width / 2;
-            holdNoteSprite.y = -9999;
-        }
+        holdNoteSprite.x = this.x;
+        holdNoteSprite.x += holdNoteSprite.noteDirection * NOTE_GAPS[Strumline.KEY_COUNT];
+        holdNoteSprite.x += SIZE / 2;
+        holdNoteSprite.x -= holdNoteSprite.width / 2;
 
         return holdNoteSprite;
+    }
+
+    override public function constructNoteSplash():NoteSplash {
+        var splash = super.constructNoteSplash();
+        splash.scale.x *= MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+        splash.scale.y *= MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT];
+        return splash;
+    }
+
+    override public function constructNoteHoldCover():NoteHoldCover {
+        var result:NoteHoldCover = super.constructNoteHoldCover();
+
+        if (result != null) {
+            result.glow.animation.onFinish.removeAll();
+            result.glow.animation.onFinish.add((animationName:String) -> {
+                if (StrTools.startsWith(animationName, "holdCoverStart")) {
+                    var color = StringTools.toTitleCase(MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT][result.holdNote.noteDirection]);
+                    result.glow.animation.play("holdCover" + color);
+                }
+                if (StrTools.startsWith(animationName, "holdCoverEnd")) {
+                    result.visible = false;
+                    result.kill();
+                }
+            });
+        }
+
+        return result;
     }
 
     override function get_width():Float {

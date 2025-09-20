@@ -6,11 +6,14 @@ import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.modding.PolymodHandler;
 import funkin.play.notes.NoteSprite;
+import funkin.play.notes.ScriptedStrumline;
 import funkin.play.notes.Strumline;
 import funkin.play.PauseSubState;
 import funkin.play.PlayState;
 import funkin.play.song.ScriptedSong;
+import funkin.Preferences;
 import funkin.save.Save;
+import funkin.util.Constants;
 import funkin.util.FileUtilSandboxed;
 import funkin.util.ReflectUtil;
 import funkin.util.SerializerUtil;
@@ -119,6 +122,13 @@ class MultikeyManager extends ScriptedModule {
         newStrum.x = strumline.x;
         newStrum.y = strumline.y;
         newStrum.cameras = strumline.cameras;
+        if (!(strumline is ScriptedStrumline)) {
+            var xOffset = Constants.STRUMLINE_X_OFFSET * MultikeyHooks.NOTE_SCALES[keysCount];
+            newStrum.x += Preferences.downscroll ? -xOffset : xOffset;
+            if (keysCount > 8 && isPlayer) newStrum.x += 9;
+            var yOffset = Constants.STRUMLINE_Y_OFFSET * MultikeyHooks.NOTE_SCALES[keysCount];
+            newStrum.y += Preferences.downscroll ? -yOffset : yOffset;
+        }
 
         strumline.clean();
 
