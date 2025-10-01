@@ -129,8 +129,8 @@ class MultikeyManager extends ScriptedModule {
             var xOffset = Constants.STRUMLINE_X_OFFSET * MultikeyHooks.NOTE_SCALES[keysCount];
             newStrum.x -= xOffset;
             if (keysCount > 8 && isPlayer) newStrum.x += 9;
-            var yOffset = Constants.STRUMLINE_Y_OFFSET * MultikeyHooks.NOTE_SCALES[keysCount];
-            newStrum.y -= yOffset;
+/*            var yOffset = Constants.STRUMLINE_Y_OFFSET * MultikeyHooks.NOTE_SCALES[keysCount];
+            newStrum.y -= yOffset;*/
         }
 
         return newStrum;

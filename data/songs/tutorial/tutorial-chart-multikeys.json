@@ -4,7 +4,55 @@
     "multi": 2.7
   },
   "events": [
-
+    {
+      "t": 300,
+      "e": "KeyCountEvent",
+      "v": {
+        "keyCount": 7
+      }
+    },
+    {
+      "t": 600,
+      "e": "KeyCountEvent",
+      "v": {
+        "keyCount": 4
+      }
+    },
+    {
+      "t": 900,
+      "e": "KeyCountEvent",
+      "v": {
+        "keyCount": 3
+      }
+    },
+    {
+      "t": 1200,
+      "e": "KeyCountEvent",
+      "v": {
+        "keyCount": 2
+      }
+    },
+    {
+      "t": 1500,
+      "e": "KeyCountEvent",
+      "v": {
+        "keyCount": 3
+      }
+    },
+    {
+      "t": 1800,
+      "e": "KeyCountEvent",
+      "v": {
+        "keyCount": 4
+      }
+    },
+    {
+      "t": 2100,
+      "e": "KeyCountEvent",
+      "v": {
+        "keyCount": 9
+      }
+    }
   ],
   "notes": {
     "multi": [

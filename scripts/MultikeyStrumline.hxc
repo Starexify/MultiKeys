@@ -14,6 +14,8 @@ import funkin.play.notes.StrumlineNote;
 import funkin.play.notes.SustainTrail;
 import funkin.util.tools.StringTools;
 import StringTools as StrTools;
+import funkin.util.Constants;
+import funkin.ui.FullScreenScaleMode;
 
 class MultikeyStrumline extends ScriptedStrumline {
     public static var DIRECTIONZ:Array<Int> = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -32,9 +34,7 @@ class MultikeyStrumline extends ScriptedStrumline {
 
         createMultikeyNotes();
 
-        background.scale.x = get_width() / 2 + Strumline.BACKGROUND_PAD * 2;
-        background.x -= Strumline.BACKGROUND_PAD * MultikeyHooks.NOTE_SCALES[keyCount];
-        background.updateHitbox();
+        updateBackground();
 
         noteHoldCovers.maxSize = keyCount;
     }
@@ -57,15 +57,53 @@ class MultikeyStrumline extends ScriptedStrumline {
 
     function refreshNotes(keyCount) {
         this.keyCount = keyCount;
+
         SIZE = Std.int(104 * MultikeyHooks.NOTE_SCALES[keyCount]);
         OFFSET = -0.275 * SIZE;
+
+        updatePosition();
+        if (isPlayer) this.x = (FlxG.width / 2 + Constants.STRUMLINE_X_OFFSET * MultikeyHooks.NOTE_SCALES[keyCount]) + (FullScreenScaleMode.gameCutoutSize.x * 0.5);
+        else this.x = Constants.STRUMLINE_X_OFFSET * MultikeyHooks.NOTE_SCALES[keyCount] + FullScreenScaleMode.gameCutoutSize.x * 0.5;
+        var xOffset = Constants.STRUMLINE_X_OFFSET * MultikeyHooks.NOTE_SCALES[keyCount];
+        this.x -= xOffset;
+
+        if (keyCount > 8 && isPlayer) this.x += 9;
+
         createMultikeyNotes();
 
-        background.scale.x = get_width() / 2 + Strumline.BACKGROUND_PAD * 2;
-        background.x -= Strumline.BACKGROUND_PAD * MultikeyHooks.NOTE_SCALES[keyCount];
-        background.updateHitbox();
+        updateBackground();
 
         refresh();
+    }
+
+    function updatePosition() {
+        var baseOffset = Constants.STRUMLINE_X_OFFSET * MultikeyHooks.NOTE_SCALES[keyCount];
+        var cutoutOffset = FullScreenScaleMode.gameCutoutSize.x * 0.5;
+/*        var centeringOffset:Float = 0;
+        trace(keyCount);
+        if (keyCount < 4) {
+            // Shift right based on how many keys we're missing from 4
+            var missingKeys = (4 - keyCount) - 1;
+            for (key in missingKeys) {
+                centeringOffset += strumlineNotes.members[key].width;
+            }
+        }
+        trace(centeringOffset);*/
+
+        if (isPlayer) {
+            this.x = (FlxG.width / 2 + baseOffset) + cutoutOffset + centeringOffset;
+            // Additional offset for 9-key layouts to improve visual balance
+            if (keyCount > 8) this.x += 9;
+        } else this.x = baseOffset + cutoutOffset + centeringOffset;
+
+        this.x -= baseOffset;
+    }
+
+    function updateBackground() {
+        var padding = Strumline.BACKGROUND_PAD * MultikeyHooks.NOTE_SCALES[keyCount];
+        background.scale.x = get_width() / 2 + padding * 2;
+        background.x = this.x - padding;
+        background.updateHitbox();
     }
 
     override public function updateNotes() {
@@ -86,14 +124,14 @@ class MultikeyStrumline extends ScriptedStrumline {
                 }
             }
 
-            if (conductorInUse.songPosition > holdNote.strumTime && holdNote.hitNote) {
+/*            if (conductorInUse.songPosition > holdNote.strumTime && holdNote.hitNote) {
                 if (!customPositionData) {
                     if (isDownscroll) holdNote.y = this.y - Strumline.INITIAL_OFFSET - holdNote.height + SIZE / 2;
                     else holdNote.y = this.y - Strumline.INITIAL_OFFSET + SIZE / 2;
 
                     holdNote.y += 20;
                 }
-            }
+            }*/
         }
     }
 
@@ -148,12 +186,12 @@ class MultikeyStrumline extends ScriptedStrumline {
             cover.x += SIZE / 2;
             cover.x -= cover.width / 2;
             cover.x += noteStyle.getHoldCoverOffsets()[0] * cover.scale.x;
-            cover.x += -12 * cover.scale.x; // hardcoded adjustment, because we are evil.
+            cover.x += -12; // hardcoded adjustment, because we are evil.
 
             cover.y = this.y;
             cover.y += SIZE / 2;
             cover.y += noteStyle.getHoldCoverOffsets()[1] * cover.scale.y;
-            cover.y += -96 * cover.scale.y; // hardcoded adjustment, because we are evil.
+            cover.y += -96; // hardcoded adjustment, because we are evil.
         }
     }
 
