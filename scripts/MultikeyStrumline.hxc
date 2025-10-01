@@ -1,7 +1,6 @@
 import flixel.FlxG;
 import flixel.math.FlxCallbackPoint;
 import flixel.math.FlxPoint;
-import funkin.data.song.SongData;
 import funkin.play.notes.NoteDirection;
 import funkin.play.notes.NoteHoldCover;
 import funkin.play.notes.notekind.NoteKind;
@@ -11,6 +10,7 @@ import funkin.play.notes.NoteSprite;
 import funkin.play.notes.notestyle.NoteStyle;
 import funkin.play.notes.ScriptedStrumline;
 import funkin.play.notes.Strumline;
+import funkin.play.notes.StrumlineNote;
 import funkin.play.notes.SustainTrail;
 import funkin.util.tools.StringTools;
 import StringTools as StrTools;
@@ -27,7 +27,6 @@ class MultikeyStrumline extends ScriptedStrumline {
     public function new(noteStyle:NoteStyle, isPlayer:Bool, keyCount:Int, ?scrollSpeed:Float) {
         super(noteStyle, isPlayer, scrollSpeed);
         this.keyCount = keyCount;
-        Strumline.KEY_COUNT = keyCount;
         SIZE = Std.int(104 * MultikeyHooks.NOTE_SCALES[keyCount]);
         OFFSET = -0.275 * SIZE;
 
@@ -41,18 +40,32 @@ class MultikeyStrumline extends ScriptedStrumline {
     }
 
     public function createMultikeyNotes() {
+        if (directions.length > 0) directions = [];
+        if (strumlineNotes.length > 0) strumlineNotes.clear();
         for (i in 0...keyCount) {
             directions.push({value: i, keyCount: keyCount});
 
-            var note = strumlineNotes.members[i];
-            note.x = directions[i].value * NOTE_GAPS[keyCount];
-            note.x += OFFSET;
-            noteStyle.applyStrumlineOffsets(note);
+            var child:StrumlineNote = new StrumlineNote(noteStyle, isPlayer, i);
+            child.x = directions[i].value * NOTE_GAPS[keyCount];
+            child.x += OFFSET;
+            child.y = 0;
+
+            noteStyle.applyStrumlineOffsets(child);
+            this.strumlineNotes.add(child);
         }
     }
 
-    override public function refresh() {
-        super.refresh();
+    function refreshNotes(keyCount) {
+        this.keyCount = keyCount;
+        SIZE = Std.int(104 * MultikeyHooks.NOTE_SCALES[keyCount]);
+        OFFSET = -0.275 * SIZE;
+        createMultikeyNotes();
+
+        background.scale.x = get_width() / 2 + Strumline.BACKGROUND_PAD * 2;
+        background.x -= Strumline.BACKGROUND_PAD * MultikeyHooks.NOTE_SCALES[keyCount];
+        background.updateHitbox();
+
+        refresh();
     }
 
     override public function updateNotes() {
@@ -75,11 +88,9 @@ class MultikeyStrumline extends ScriptedStrumline {
 
             if (conductorInUse.songPosition > holdNote.strumTime && holdNote.hitNote) {
                 if (!customPositionData) {
-                    if (isDownscroll) {
-                        holdNote.y = this.y - Strumline.INITIAL_OFFSET - holdNote.height + SIZE / 2;
-                    } else {
-                        holdNote.y = this.y - Strumline.INITIAL_OFFSET + SIZE / 2;
-                    }
+                    if (isDownscroll) holdNote.y = this.y - Strumline.INITIAL_OFFSET - holdNote.height + SIZE / 2;
+                    else holdNote.y = this.y - Strumline.INITIAL_OFFSET + SIZE / 2;
+
                     holdNote.y += 20;
                 }
             }
@@ -187,7 +198,7 @@ class MultikeyStrumline extends ScriptedStrumline {
         holdNoteSprite.x += holdNoteSprite.noteDirection * NOTE_GAPS[Strumline.KEY_COUNT];
         holdNoteSprite.x += SIZE / 2;
         holdNoteSprite.x -= holdNoteSprite.width / 2;
-        holdNoteSprite.yOffset *= MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT] ;
+        holdNoteSprite.yOffset *= MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT];
 
         return holdNoteSprite;
     }

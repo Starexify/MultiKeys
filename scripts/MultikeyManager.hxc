@@ -11,7 +11,6 @@ import funkin.play.notes.Strumline;
 import funkin.play.PauseSubState;
 import funkin.play.PlayState;
 import funkin.play.song.ScriptedSong;
-import funkin.Preferences;
 import funkin.save.Save;
 import funkin.util.Constants;
 import funkin.util.FileUtilSandboxed;
@@ -58,34 +57,33 @@ class MultikeyManager extends ScriptedModule {
     }
 
     function onSubStateChange(nextState:PlayState) {
-        if (nextState is PlayState) {
-            var keyCount = 4;
-            var metadataPath = buildMetadataPath(nextState);
+        if (!(nextState is PlayState)) return;
 
-            var prevMeta = SerializerUtil.fromJSON(Assets.getText(Paths.json(metadataPath)));
-            if (prevMeta?.playData?.keyCounts != null) {
-                var extractedCount = ReflectUtil.getProperty(prevMeta.playData.keyCounts, nextState.currentDifficulty);
-                if (extractedCount != null) keyCount = extractedCount;
-            } else {
-                var multiMeta = readKeyCount("data/songs/" + nextState.currentSong.id + "/" + nextState.currentSong.id + "-multimeta");
-                if (multiMeta?.keyCounts?.variation != null) {
-                    var variationData = ReflectUtil.getProperty(multiMeta.keyCounts.variation, nextState.currentVariation);
-                    if (variationData != null) {
-                        var multiKeyCount = ReflectUtil.getProperty(variationData, nextState.currentDifficulty);
-                        if (multiKeyCount != null) keyCount = multiKeyCount;
-                    }
+        var keyCount = 4;
+        var metadataPath = buildMetadataPath(nextState);
+
+        var prevMeta = SerializerUtil.fromJSON(Assets.getText(Paths.json(metadataPath)));
+        if (prevMeta?.playData?.keyCounts != null) {
+            var extractedCount = ReflectUtil.getProperty(prevMeta.playData.keyCounts, nextState.currentDifficulty);
+            if (extractedCount != null) keyCount = extractedCount;
+        } else {
+            var multiMeta = readKeyCount("data/songs/" + nextState.currentSong.id + "/" + nextState.currentSong.id + "-multimeta");
+            if (multiMeta?.keyCounts?.variation != null) {
+                var variationData = ReflectUtil.getProperty(multiMeta.keyCounts.variation, nextState.currentVariation);
+                if (variationData != null) {
+                    var multiKeyCount = ReflectUtil.getProperty(variationData, nextState.currentDifficulty);
+                    if (multiKeyCount != null) keyCount = multiKeyCount;
                 }
             }
-
-            Strumline.KEY_COUNT = keysCount = keyCount;
-
-            handleScriptedSongSetup();
-            setupMultikey(Strumline.KEY_COUNT);
         }
+
+        Strumline.KEY_COUNT = keysCount = keyCount;
+
+        handleScriptedSongSetup();
+        setupMultikey(Strumline.KEY_COUNT);
     }
 
     function setupMultikey(keyCount:Int) {
-        //if (FlxG.onMobile) Preferences.controlsScheme = null;
         // make sure it isn't outside the range [0, 9]
         if (checkKeys && (Strumline.KEY_COUNT > 9 || Strumline.KEY_COUNT < 1)) Strumline.KEY_COUNT = 4;
 
@@ -98,6 +96,14 @@ class MultikeyManager extends ScriptedModule {
     }
 
     override function onSongLoaded(event:SongLoadScriptEvent) {
+        changeStrumlines();
+    }
+
+    override public function onSongStart(event:ScriptEvent) {
+       changeStrumlines();
+    }
+
+    function changeStrumlines() {
         if (playState == null) return;
 
         // Strumlines
@@ -109,6 +115,7 @@ class MultikeyManager extends ScriptedModule {
 
         playState.playerStrumline = playerStrum;
         playState.opponentStrumline = opponentStrum;
+
         playState.add(playState.playerStrumline);
         playState.add(playState.opponentStrumline);
 
@@ -141,8 +148,8 @@ class MultikeyManager extends ScriptedModule {
             if (keysCount == Strumline.KEY_COUNT) return;
             Strumline.KEY_COUNT = event.eventData.value?.keyCount;
             setupMultikey(Strumline.KEY_COUNT);
-            //refreshStrumline(playState.playerStrumline, Strumline.KEY_COUNT);
-            //refreshStrumline(playState.opponentStrumline, Strumline.KEY_COUNT);
+            playState.playerStrumline.refreshNotes(Strumline.KEY_COUNT);
+            playState.opponentStrumline.refreshNotes(Strumline.KEY_COUNT);
             initPreciseInputs();
         }
     }

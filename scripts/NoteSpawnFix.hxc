@@ -1,4 +1,3 @@
-import funkin.Highscore;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
 import funkin.play.PlayState;
@@ -13,7 +12,7 @@ class NoteSpawnFix extends ScriptedModule {
     }
 
     override function onCountdownStart(event:CountdownScriptEvent) {
-        if (Strumline.KEY_COUNT != 4) regenNoteData();
+       regenNoteData();
     }
 
     override function onSongEvent(event:SongEventScriptEvent) {
@@ -21,7 +20,7 @@ class NoteSpawnFix extends ScriptedModule {
     }
 
     override function onUpdate(event:UpdateScriptEvent) {
-        if (playState == null || Strumline.KEY_COUNT == 4) return;
+        if (playState == null) return;
         if (playState.needsReset) regenNoteData();
     }
 

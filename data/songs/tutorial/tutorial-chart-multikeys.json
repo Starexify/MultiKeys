@@ -4,7 +4,13 @@
     "multi": 2.7
   },
   "events": [
-
+    {
+      "t": 300,
+      "e": "KeyCountEvent",
+      "v": {
+        "keyCount": 7
+      }
+    }
   ],
   "notes": {
     "multi": [
