@@ -27,7 +27,8 @@ class MultikeyManager extends ScriptedModule {
 
     function get_playState():PlayState { return PlayState.instance; }
 
-    var keysCount:Int;
+    var keyCount:Int;
+    var initialKeyCount:Int;
 
     var inputPressQueue:Array<PreciseInputEvent> = [];
     var inputReleaseQueue:Array<PreciseInputEvent> = [];
@@ -59,25 +60,25 @@ class MultikeyManager extends ScriptedModule {
     function onSubStateChange(nextState:PlayState) {
         if (!(nextState is PlayState)) return;
 
-        var keyCount = 4;
+        var keysCount = 4;
         var metadataPath = buildMetadataPath(nextState);
 
         var prevMeta = SerializerUtil.fromJSON(Assets.getText(Paths.json(metadataPath)));
         if (prevMeta?.playData?.keyCounts != null) {
             var extractedCount = ReflectUtil.getProperty(prevMeta.playData.keyCounts, nextState.currentDifficulty);
-            if (extractedCount != null) keyCount = extractedCount;
+            if (extractedCount != null) keysCount = extractedCount;
         } else {
             var multiMeta = readKeyCount("data/songs/" + nextState.currentSong.id + "/" + nextState.currentSong.id + "-multimeta");
             if (multiMeta?.keyCounts?.variation != null) {
                 var variationData = ReflectUtil.getProperty(multiMeta.keyCounts.variation, nextState.currentVariation);
                 if (variationData != null) {
                     var multiKeyCount = ReflectUtil.getProperty(variationData, nextState.currentDifficulty);
-                    if (multiKeyCount != null) keyCount = multiKeyCount;
+                    if (multiKeyCount != null) keysCount = multiKeyCount;
                 }
             }
         }
 
-        Strumline.KEY_COUNT = keysCount = keyCount;
+        Strumline.KEY_COUNT = keyCount = initialKeyCount = keysCount;
 
         handleScriptedSongSetup();
         setupMultikey(Strumline.KEY_COUNT);
@@ -99,23 +100,18 @@ class MultikeyManager extends ScriptedModule {
         changeStrumlines();
     }
 
-    override public function onSongStart(event:ScriptEvent) {
-       changeStrumlines();
-    }
-
     function changeStrumlines() {
         if (playState == null) return;
 
         // Strumlines
-        playerStrum = createMultikeyStrumline(playState.playerStrumline, keysCount, !playState.isBotPlayMode);
-        opponentStrum = createMultikeyStrumline(playState.opponentStrumline, keysCount, false);
+        playerStrum = createMultikeyStrumline(playState.playerStrumline, keyCount, !playState.isBotPlayMode);
+        opponentStrum = createMultikeyStrumline(playState.opponentStrumline, keyCount, false);
 
-        playState.playerStrumline.clear();
-        playState.opponentStrumline.clear();
+        playState.playerStrumline.destroy();
+        playState.opponentStrumline.destroy();
 
         playState.playerStrumline = playerStrum;
         playState.opponentStrumline = opponentStrum;
-
         playState.add(playState.playerStrumline);
         playState.add(playState.opponentStrumline);
 
@@ -137,21 +133,25 @@ class MultikeyManager extends ScriptedModule {
             newStrum.y -= yOffset;
         }
 
-        strumline.clean();
-
         return newStrum;
     }
 
     override function onSongEvent(event:SongEventScriptEvent) {
         if (event.eventData.eventKind == "KeyCountEvent") {
-            keysCount = event.eventData.value?.keyCount;
-            if (keysCount == Strumline.KEY_COUNT) return;
+            keyCount = event.eventData.value?.keyCount;
+            if (keyCount == Strumline.KEY_COUNT) return;
             Strumline.KEY_COUNT = event.eventData.value?.keyCount;
             setupMultikey(Strumline.KEY_COUNT);
             playState.playerStrumline.refreshNotes(Strumline.KEY_COUNT);
             playState.opponentStrumline.refreshNotes(Strumline.KEY_COUNT);
             initPreciseInputs();
         }
+    }
+
+    override function onSongRetry(event:SongRetryEvent) {
+        if (keyCount == initialKeyCount) return;
+        Strumline.KEY_COUNT = keyCount = initialKeyCount;
+        changeStrumlines();
     }
 
     override function onCountdownStart(event:CountdownScriptEvent) {
@@ -310,6 +310,8 @@ class MultikeyManager extends ScriptedModule {
     override function onDestroy(event:ScriptEvent) { cleanup(); }
 
     function cleanup() {
+        playerStrum = null;
+        opponentStrum = null;
         PreciseInputManager.instance.onInputPressed.removeAll();
         PreciseInputManager.instance.onInputReleased.removeAll();
     }

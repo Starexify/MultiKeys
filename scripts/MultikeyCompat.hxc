@@ -1,8 +1,9 @@
+import flixel.FlxG;
 import funkin.data.song.importer.FNFLegacyImporter;
 import funkin.graphics.FunkinSprite;
-import funkin.modding.PolymodHandler;
-import funkin.modding.module.ScriptedModule;
 import funkin.modding.events.ScriptEvent;
+import funkin.modding.module.ScriptedModule;
+import funkin.modding.PolymodHandler;
 import funkin.play.notes.Strumline;
 import funkin.ui.debug.charting.ChartEditorState;
 import funkin.ui.debug.charting.handlers.ChartEditorThemeHandler;
@@ -10,9 +11,6 @@ import funkin.ui.debug.charting.handlers.ChartEditorToolboxHandler;
 import funkin.util.FileUtilSandboxed;
 import funkin.util.ReflectUtil;
 import funkin.util.SerializerUtil;
-
-import flixel.FlxG;
-
 import haxe.ui.components.Label;
 import haxe.ui.components.NumberStepper;
 import haxe.ui.components.VerticalRule;
@@ -49,97 +47,97 @@ class MultikeyCompat extends ScriptedModule {
     }
 
     override function onStateChangeEnd(event:StateChangeScriptEvent) {
-        if (event.targetState is ChartEditorState) {
-            chartEditor = event.targetState;
+        if (!(event.targetState is ChartEditorState)) {
+            chartEditor = null;
+            return;
+        }
+        chartEditor = event.targetState;
 
-            // Add Keys to the Playbar
-            if (box == null) box = chartEditor.root.findComponent("playbar", Box, false);
-            if (!addedKeysComponent && box != null) {
-                var hbox = box.findComponents(null, HBox, 1)[2];
-                if (hbox != null) {
-                    var remainingLabel = hbox.findComponent("playbarSongRemaining", Label, false);
-                    if (remainingLabel != null) hbox.removeComponent(remainingLabel);
+        // Add Keys to the Playbar
+        if (box == null) box = chartEditor.root.findComponent("playbar", Box, false);
+        if (!addedKeysComponent && box != null) {
+            var hbox = box.findComponents(null, HBox, 1)[2];
+            if (hbox != null) {
+                var remainingLabel = hbox.findComponent("playbarSongRemaining", Label, false);
+                if (remainingLabel != null) hbox.removeComponent(remainingLabel);
 
-                    var rule = new VerticalRule();
-                    rule.percentHeight = 80;
+                var rule = new VerticalRule();
+                rule.percentHeight = 80;
 
-                    playbarKeys = new Label();
-                    playbarKeys.id = "playbarKeys";
-                    playbarKeys.styleNames = "playbarStatus";
-                    playbarKeys.verticalAlign = "center";
-                    playbarKeys.tooltip = "Left Click to Increase Key Count\nRight Click to Decrease Key Count\nCtrl+Click to open Metadata Window";
-                    function updateKeysDisplay() playbarKeys.text = "Keys: " + ChartEditorState.STRUMLINE_SIZE;
-                    updateKeysDisplay();
+                playbarKeys = new Label();
+                playbarKeys.id = "playbarKeys";
+                playbarKeys.styleNames = "playbarStatus";
+                playbarKeys.verticalAlign = "center";
+                playbarKeys.tooltip = "Left Click to Increase Key Count\nRight Click to Decrease Key Count\nCtrl+Click to open Metadata Window";
+                function updateKeysDisplay() playbarKeys.text = "Keys: " + ChartEditorState.STRUMLINE_SIZE;
+                updateKeysDisplay();
 
-                    playbarKeys.onClick = (event:UIEvent) -> {
-                        if (chartEditor.pressingControl()) ChartEditorToolboxHandler.setToolboxState(chartEditor, ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT, true);
-                        else { if (ChartEditorState.STRUMLINE_SIZE < 9) {
-                            ChartEditorToolboxHandler.refreshToolbox(chartEditor, ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT);
-                            ChartEditorState.STRUMLINE_SIZE++;
-                            updateChartEditor(chartEditor, ChartEditorState.STRUMLINE_SIZE);
-                            updateKeysDisplay();
-                        }}
-                    }
-                    playbarKeys.onRightClick = (event:UIEvent) -> if (ChartEditorState.STRUMLINE_SIZE > 1) {
+                playbarKeys.onClick = (event:UIEvent) -> {
+                    if (chartEditor.pressingControl()) ChartEditorToolboxHandler.setToolboxState(chartEditor, ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT, true);
+                    else { if (ChartEditorState.STRUMLINE_SIZE < 9) {
                         ChartEditorToolboxHandler.refreshToolbox(chartEditor, ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT);
-                        ChartEditorState.STRUMLINE_SIZE--;
+                        ChartEditorState.STRUMLINE_SIZE++;
                         updateChartEditor(chartEditor, ChartEditorState.STRUMLINE_SIZE);
                         updateKeysDisplay();
-                    }
-
-                    var newRemainingLabel = new Label();
-                    newRemainingLabel.id = "playbarSongRemaining";
-                    newRemainingLabel.text = "-1:00";
-                    newRemainingLabel.styleNames = "playbarDuration";
-
-                    hbox.addComponent(playbarKeys);
-                    hbox.addComponent(rule);
-                    hbox.addComponent(newRemainingLabel);
-                    chartEditor.playbarSongRemaining = newRemainingLabel;
-                    addedKeysComponent = true;
+                    }}
                 }
-            }
+                playbarKeys.onRightClick = (event:UIEvent) -> if (ChartEditorState.STRUMLINE_SIZE > 1) {
+                    ChartEditorToolboxHandler.refreshToolbox(chartEditor, ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT);
+                    ChartEditorState.STRUMLINE_SIZE--;
+                    updateChartEditor(chartEditor, ChartEditorState.STRUMLINE_SIZE);
+                    updateKeysDisplay();
+                }
 
-            updateChartEditor(chartEditor, DEFAULT_KEY_COUNT);
-        } else
-            chartEditor = null;
+                var newRemainingLabel = new Label();
+                newRemainingLabel.id = "playbarSongRemaining";
+                newRemainingLabel.text = "-1:00";
+                newRemainingLabel.styleNames = "playbarDuration";
+
+                hbox.addComponent(playbarKeys);
+                hbox.addComponent(rule);
+                hbox.addComponent(newRemainingLabel);
+                chartEditor.playbarSongRemaining = newRemainingLabel;
+                addedKeysComponent = true;
+            }
+        }
+
+        updateChartEditor(chartEditor, DEFAULT_KEY_COUNT);
     }
 
     override function onUpdate(event:UpdateScriptEvent) {
-        if (chartEditor != null) {
-            // Add Key Count component to the Song Metadata toolbox
-            if (!addedComponent && chartEditor.activeToolboxes.exists(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT)) {
-                var metadataToolbox = chartEditor.activeToolboxes.get(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT);
-                var frameDifficulty = metadataToolbox.findComponent("frameDifficulty", Frame, true);
+        if (chartEditor == null) return;
+        // Add Key Count component to the Song Metadata toolbox
+        if (!addedComponent && chartEditor.activeToolboxes.exists(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT)) {
+            var metadataToolbox = chartEditor.activeToolboxes.get(ChartEditorState.CHART_EDITOR_TOOLBOX_METADATA_LAYOUT);
+            var frameDifficulty = metadataToolbox.findComponent("frameDifficulty", Frame, true);
 
-                if (frameDifficulty != null) {
-                    var grid = frameDifficulty.findComponent(null, Grid, true);
-                    if (grid != null) {
-                        var keyCountLabel:Label = new Label();
-                        keyCountLabel.text = "Key Count:";
-                        keyCountLabel.verticalAlign = "center";
+            if (frameDifficulty != null) {
+                var grid = frameDifficulty.findComponent(null, Grid, true);
+                if (grid != null) {
+                    var keyCountLabel:Label = new Label();
+                    keyCountLabel.text = "Key Count:";
+                    keyCountLabel.verticalAlign = "center";
 
-                        keyCounter = new NumberStepper();
-                        keyCounter.id = "keyCount";
-                        keyCounter.pos = ChartEditorState.STRUMLINE_SIZE;
-                        keyCounter.min = 1;
-                        keyCounter.max = 9;
-                        keyCounter.tooltip = "Set the key count of the song variation.";
-                        keyCounter.onChange = (event:UIEvent) -> updateChartEditor(chartEditor, event.target.pos);
+                    keyCounter = new NumberStepper();
+                    keyCounter.id = "keyCount";
+                    keyCounter.pos = ChartEditorState.STRUMLINE_SIZE;
+                    keyCounter.min = 1;
+                    keyCounter.max = 9;
+                    keyCounter.tooltip = "Set the key count of the song variation.";
+                    keyCounter.onChange = (event:UIEvent) -> updateChartEditor(chartEditor, event.target.pos);
 
-                        grid.addComponent(keyCountLabel);
-                        grid.addComponent(keyCounter);
+                    grid.addComponent(keyCountLabel);
+                    grid.addComponent(keyCounter);
 
-                        metadataToolbox.height += 30;
-                        frameDifficulty.height += 30;
-                        addedComponent = true;
-                    }
+                    metadataToolbox.height += 30;
+                    frameDifficulty.height += 30;
+                    addedComponent = true;
                 }
             }
-
-            handleMultiMeta(chartEditor);
-            handleKeyCountEvent(chartEditor);
         }
+
+        handleMultiMeta(chartEditor);
+        handleKeyCountEvent(chartEditor);
     }
 
     // Handlers
@@ -263,10 +261,14 @@ class MultikeyCompat extends ScriptedModule {
         chartEditor.renderedEvents.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
         chartEditor.renderedSelectionSquares.setPosition(chartEditor.gridTiledSprite?.x ?? 0.0, chartEditor.gridTiledSprite?.y ?? 0.0);
 
+        trace(chartEditor.healthIconDad.x);
+        chartEditor.healthIconBF.updateHitbox();
+        chartEditor.healthIconDad.updateHitbox();
+        trace(chartEditor.healthIconDad.x);
         if (chartEditor.audioWaveforms.members[0] != null)
-            chartEditor.audioWaveforms.members[0].x = chartEditor.healthIconDad.x + (lastKeyCount > keyCount ? chartEditor.healthIconDad.width / 2 : -chartEditor.healthIconDad.width / 2);
+            chartEditor.audioWaveforms.members[0].x = chartEditor.healthIconDad.x;
         if (chartEditor.audioWaveforms.members[1] != null)
-            chartEditor.audioWaveforms.members[1].x = chartEditor.healthIconBF.x - (lastKeyCount > keyCount ? chartEditor.healthIconBF.width / 2 : -chartEditor.healthIconBF.width / 2);
+            chartEditor.audioWaveforms.members[1].x = chartEditor.healthIconBF.x;
 
         lastKeyCount = keyCount;
     }
