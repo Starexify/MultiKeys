@@ -91,10 +91,10 @@ class MultikeyStrumline extends ScriptedStrumline {
         trace(centeringOffset);*/
 
         if (isPlayer) {
-            this.x = (FlxG.width / 2 + baseOffset) + cutoutOffset + centeringOffset;
+            this.x = (FlxG.width / 2 + baseOffset) + cutoutOffset;
             // Additional offset for 9-key layouts to improve visual balance
             if (keyCount > 8) this.x += 9;
-        } else this.x = baseOffset + cutoutOffset + centeringOffset;
+        } else this.x = baseOffset + cutoutOffset;
 
         this.x -= baseOffset;
     }
