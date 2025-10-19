@@ -4,7 +4,6 @@ import flixel.math.FlxMath;
 import funkin.input.PreciseInputManager;
 import funkin.modding.events.ScriptEvent;
 import funkin.modding.module.ScriptedModule;
-import funkin.modding.PolymodHandler;
 import funkin.play.notes.NoteSprite;
 import funkin.play.notes.ScriptedStrumline;
 import funkin.play.notes.Strumline;
@@ -21,300 +20,304 @@ import funkin.util.tools.StringTools;
 using Lambda;
 
 class MultikeyManager extends ScriptedModule {
-    var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
+  var multikeysOptions:Null<MultikeySaveData> = Save.instance.modOptions.get("multikeys");
 
-    var playState(get, never):PlayState;
+  var playState(get, never):PlayState;
 
-    function get_playState():PlayState { return PlayState.instance; }
+  function get_playState():PlayState { return PlayState.instance; }
 
-    var keyCount:Int;
-    var initialKeyCount:Int;
+  var keyCount:Int;
+  var initialKeyCount:Int;
 
-    var inputPressQueue:Array<PreciseInputEvent> = [];
-    var inputReleaseQueue:Array<PreciseInputEvent> = [];
+  var inputPressQueue:Array<PreciseInputEvent> = [];
+  var inputReleaseQueue:Array<PreciseInputEvent> = [];
 
-    var justPressedActions = [];
-    var justReleasedActions = [];
+  var justPressedActions = [];
+  var justReleasedActions = [];
 
-    var checkKeys:Bool = true;
+  var checkKeys:Bool = true;
 
-    var playerStrum:MultikeyStrumline;
-    var opponentStrum:MultikeyStrumline;
+  var playerStrum:MultikeyStrumline;
+  var opponentStrum:MultikeyStrumline;
 
-    function new() {
-        super("MultikeyManager", FlxMath.MIN_VALUE_INT);
-    }
+  function new() {
+    super("MultikeyManager", FlxMath.MIN_VALUE_INT);
+  }
 
-    // Setup Multikey
-    override function onStateChangeBegin(event:StateChangeScriptEvent) {
-        FlxG.signals.preStateCreate.addOnce(onSubStateChange);
-    }
+  // Setup Multikey
+  override function onStateChangeBegin(event:StateChangeScriptEvent) {
+    FlxG.signals.preStateCreate.addOnce(onSubStateChange);
+  }
 
-    override function onSubStateOpenBegin(event:SubStateScriptEvent) {
-        if (event.targetState is PauseSubState) return;
+  override function onSubStateOpenBegin(event:SubStateScriptEvent) {
+    if (event.targetState is PauseSubState) return;
 
-        if (!(event.targetState is PlayState)) cleanup();
-        onSubStateChange(event.targetState);
-    }
+    if (!(event.targetState is PlayState)) cleanup();
+    onSubStateChange(event.targetState);
+  }
 
-    function onSubStateChange(nextState:PlayState) {
-        if (!(nextState is PlayState)) return;
+  function onSubStateChange(nextState:PlayState) {
+    if (!(nextState is PlayState)) return;
 
-        var keysCount = 4;
-        var metadataPath = buildMetadataPath(nextState);
+    var keysCount = 4;
+    var metadataPath = buildMetadataPath(nextState);
 
-        var prevMeta = SerializerUtil.fromJSON(Assets.getText(Paths.json(metadataPath)));
-        if (prevMeta?.playData?.keyCounts != null) {
-            var extractedCount = ReflectUtil.getProperty(prevMeta.playData.keyCounts, nextState.currentDifficulty);
-            if (extractedCount != null) keysCount = extractedCount;
-        } else {
-            var multiMeta = readKeyCount("data/songs/" + nextState.currentSong.id + "/" + nextState.currentSong.id + "-multimeta");
-            if (multiMeta?.keyCounts?.variation != null) {
-                var variationData = ReflectUtil.getProperty(multiMeta.keyCounts.variation, nextState.currentVariation);
-                if (variationData != null) {
-                    var multiKeyCount = ReflectUtil.getProperty(variationData, nextState.currentDifficulty);
-                    if (multiKeyCount != null) keysCount = multiKeyCount;
-                }
-            }
+    var prevMeta = SerializerUtil.fromJSON(Assets.getText(Paths.json(metadataPath)));
+    if (prevMeta?.playData?.keyCounts != null) {
+      var extractedCount = ReflectUtil.getProperty(prevMeta.playData.keyCounts, nextState.currentDifficulty);
+      if (extractedCount != null) keysCount = extractedCount;
+    } else {
+      var multiMeta = readKeyCount(Paths.json("songs/" + nextState.currentSong.id + "/" + nextState.currentSong.id + "-multimeta"));
+      if (multiMeta?.keyCounts?.variation != null) {
+        var variationData = ReflectUtil.getProperty(multiMeta.keyCounts.variation, nextState.currentVariation);
+        if (variationData != null) {
+          var multiKeyCount = ReflectUtil.getProperty(variationData, nextState.currentDifficulty);
+          if (multiKeyCount != null) keysCount = multiKeyCount;
         }
-
-        Strumline.KEY_COUNT = keyCount = initialKeyCount = keysCount;
-
-        handleScriptedSongSetup();
-        setupMultikey(Strumline.KEY_COUNT);
+      }
     }
 
-    function setupMultikey(keyCount:Int) {
-        // make sure it isn't outside the range [0, 9]
-        if (checkKeys && (Strumline.KEY_COUNT > 9 || Strumline.KEY_COUNT < 1)) Strumline.KEY_COUNT = 4;
+    Strumline.KEY_COUNT = keyCount = initialKeyCount = keysCount;
 
-        trace("[MultiKeys] Trying to set key count to: " + keyCount + " , set it to: " + Strumline.KEY_COUNT);
+    handleScriptedSongSetup();
+    setupMultikey(Strumline.KEY_COUNT);
+  }
 
-        Strumline.STRUMLINE_SIZE = Std.int(104 * MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT]);
-        Strumline.DIRECTIONS = [];
-        for (i in 0...Strumline.KEY_COUNT) Strumline.DIRECTIONS.push(i);
-        NoteSprite.DIRECTION_COLORS = MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT];
-    }
+  function setupMultikey(keyCount:Int) {
+    // make sure it isn't outside the range [0, 9]
+    if (checkKeys && (Strumline.KEY_COUNT > 9 || Strumline.KEY_COUNT < 1)) Strumline.KEY_COUNT = 4;
 
-    override function onSongLoaded(event:SongLoadScriptEvent) {
-        changeStrumlines();
-    }
+    trace("[MultiKeys] Trying to set key count to: " + keyCount + " , set it to: " + Strumline.KEY_COUNT);
 
-    function changeStrumlines() {
-        if (playState == null) return;
+    Strumline.STRUMLINE_SIZE = Std.int(104 * MultikeyHooks.NOTE_SCALES[Strumline.KEY_COUNT]);
+    Strumline.DIRECTIONS = [];
+    for (i in 0...Strumline.KEY_COUNT) Strumline.DIRECTIONS.push(i);
+    NoteSprite.DIRECTION_COLORS = MultikeyHooks.MULTIKEY_COLORS[Strumline.KEY_COUNT];
+  }
 
-        // Strumlines
-        playerStrum = createMultikeyStrumline(playState.playerStrumline, keyCount, !playState.isBotPlayMode);
-        opponentStrum = createMultikeyStrumline(playState.opponentStrumline, keyCount, false);
+  override function onSongLoaded(event:SongLoadScriptEvent) {
+    changeStrumlines();
+  }
 
-        playState.playerStrumline.destroy();
-        playState.opponentStrumline.destroy();
+  function changeStrumlines() {
+    if (playState == null) return;
 
-        playState.playerStrumline = playerStrum;
-        playState.opponentStrumline = opponentStrum;
-        playState.add(playState.playerStrumline);
-        playState.add(playState.opponentStrumline);
+    // Strumlines
+    playerStrum = createMultikeyStrumline(playState.playerStrumline, keyCount, !playState.isBotPlayMode);
+    opponentStrum = createMultikeyStrumline(playState.opponentStrumline, keyCount, false);
 
-        playState.playerStrumline.fadeInArrows();
-        playState.opponentStrumline.fadeInArrows();
-    }
+    playState.playerStrumline.destroy();
+    playState.opponentStrumline.destroy();
 
-    function createMultikeyStrumline(strumline:Strumline, keysCount:Int, isPlayer:Bool):MultikeyStrumline {
-        var newStrum = new MultikeyStrumline(strumline.noteStyle, isPlayer, keysCount, playState.currentChart?.scrollSpeed);
+    playState.playerStrumline = playerStrum;
+    playState.opponentStrumline = opponentStrum;
+    playState.add(playState.playerStrumline);
+    playState.add(playState.opponentStrumline);
 
-        newStrum.x = strumline.x;
-        newStrum.y = strumline.y;
-        newStrum.cameras = strumline.cameras;
-        if (!(strumline is ScriptedStrumline)) {
-            var xOffset = Constants.STRUMLINE_X_OFFSET * MultikeyHooks.NOTE_SCALES[keysCount];
-            newStrum.x -= xOffset;
-            if (keysCount > 8 && isPlayer) newStrum.x += 9;
+    playState.playerStrumline.fadeInArrows();
+    playState.opponentStrumline.fadeInArrows();
+  }
+
+  function createMultikeyStrumline(strumline:Strumline, keysCount:Int, isPlayer:Bool):MultikeyStrumline {
+    var newStrum = new MultikeyStrumline(strumline.noteStyle, isPlayer, keysCount, playState.currentChart?.scrollSpeed);
+
+    newStrum.x = strumline.x;
+    newStrum.y = strumline.y;
+    newStrum.cameras = strumline.cameras;
+    if (!(strumline is ScriptedStrumline)) {
+      var xOffset = Constants.STRUMLINE_X_OFFSET * MultikeyHooks.NOTE_SCALES[keysCount];
+      newStrum.x -= xOffset;
+      if (keysCount > 8 && isPlayer) newStrum.x += 9;
 /*            var yOffset = Constants.STRUMLINE_Y_OFFSET * MultikeyHooks.NOTE_SCALES[keysCount];
             newStrum.y -= yOffset;*/
-        }
-
-        return newStrum;
     }
 
-    override function onSongEvent(event:SongEventScriptEvent) {
-        if (event.eventData.eventKind == "KeyCountEvent") {
-            keyCount = event.eventData.value?.keyCount;
-            if (keyCount == Strumline.KEY_COUNT) return;
-            Strumline.KEY_COUNT = event.eventData.value?.keyCount;
-            setupMultikey(Strumline.KEY_COUNT);
-            playState.playerStrumline.refreshNotes(Strumline.KEY_COUNT);
-            playState.opponentStrumline.refreshNotes(Strumline.KEY_COUNT);
-            initPreciseInputs();
-        }
+    return newStrum;
+  }
+
+  override function onSongEvent(event:SongEventScriptEvent) {
+    if (event.eventData.eventKind == "KeyCountEvent") {
+      keyCount = event.eventData.value?.keyCount;
+      if (keyCount == Strumline.KEY_COUNT) return;
+      Strumline.KEY_COUNT = event.eventData.value?.keyCount;
+      setupMultikey(Strumline.KEY_COUNT);
+      playState.playerStrumline.refreshNotes(Strumline.KEY_COUNT);
+      playState.opponentStrumline.refreshNotes(Strumline.KEY_COUNT);
+      initPreciseInputs();
+    }
+  }
+
+  override function onSongRetry(event:SongRetryEvent) {
+    if (keyCount == initialKeyCount) return;
+    Strumline.KEY_COUNT = keyCount = initialKeyCount;
+    changeStrumlines();
+  }
+
+  override function onCountdownStart(event:CountdownScriptEvent) {
+    if (playState != null) initPreciseInputs();
+  }
+
+  override function onUpdate(event:UpdateScriptEvent) {
+    // Handle keybinds
+    if (playState == null) return;
+    if (playState.criticalFailure || playState.isGamePaused) return;
+    for (i in 0...justPressedActions.length) {
+      // Get timestamp only once per frame
+      var ts = PreciseInputManager.getCurrentTimestamp();
+      if (justPressedActions[i].check()) onKeyPress({noteDirection: i, timestamp: ts});
+      if (justReleasedActions[i].check()) onKeyRelease({noteDirection: i, timestamp: ts});
+    }
+    processInputQueue();
+  }
+
+  // Polymod doesn't remember variables for some reason, so we place the variables in the class scope
+  var notesInRange:Array<NoteSprite>;
+  var notesByDirection:Array<Array<NoteSprite>>;
+  var input:PreciseInputEvent;
+  var releaseInput:PreciseInputEvent;
+  var targetNote:Null<NoteSprite>;
+  var notesInDirection:Array<NoteSprite>;
+
+  function processInputQueue() {
+    if (inputPressQueue.length + inputReleaseQueue.length == 0) return;
+
+    // Ignore inputs during cutscenes.
+    if (playState.isInCutscene || playState.disableKeys) {
+      inputPressQueue = [];
+      inputReleaseQueue = [];
+      return;
     }
 
-    override function onSongRetry(event:SongRetryEvent) {
-        if (keyCount == initialKeyCount) return;
-        Strumline.KEY_COUNT = keyCount = initialKeyCount;
-        changeStrumlines();
+    notesInRange = playState.playerStrumline.getNotesMayHit();
+    notesByDirection = [for (i in 0...Strumline.KEY_COUNT) []];
+    for (note in notesInRange) notesByDirection[note.direction].push(note);
+
+    // Process press queue
+    while (inputPressQueue.length > 0) {
+      input = inputPressQueue.shift();
+      if (input == null) continue;
+
+      playState.playerStrumline.pressKey(input.noteDirection);
+
+      // Don't credit or penalize inputs in Bot Play.
+      if (playState.isBotPlayMode) continue;
+
+      notesInDirection = notesByDirection[input.noteDirection];
+
+      if (notesInDirection.length == 0) {
+        playState.ghostNoteMiss(input.noteDirection, notesInRange.length > 0);
+        playState.playerStrumline.playPress(input.noteDirection);
+      } else if (notesInDirection.length == 0) {
+        playState.playerStrumline.playPress(input.noteDirection);
+      } else {
+        targetNote = notesInDirection.find((note:NoteSprite) -> !note.lowPriority);
+        if (targetNote == null) targetNote = notesInDirection[0];
+        if (targetNote == null) continue;
+
+        playState.goodNoteHit(targetNote, input);
+        notesInDirection.remove(targetNote);
+        playState.playerStrumline.playConfirm(input.noteDirection);
+      }
     }
 
-    override function onCountdownStart(event:CountdownScriptEvent) {
-        if (playState != null) initPreciseInputs();
+    // Process release queue
+    while (inputReleaseQueue.length > 0) {
+      releaseInput = inputReleaseQueue.shift();
+      if (releaseInput == null) continue;
+
+      playState.playerStrumline.playStatic(releaseInput.noteDirection);
+      playState.playerStrumline.releaseKey(releaseInput.noteDirection);
     }
 
-    override function onUpdate(event:UpdateScriptEvent) {
-        // Handle keybinds
-        if (playState == null) return;
-        if (playState.criticalFailure || playState.isGamePaused) return;
-        for (i in 0...justPressedActions.length) {
-            // Get timestamp only once per frame
-            var ts = PreciseInputManager.getCurrentTimestamp();
-            if (justPressedActions[i].check()) onKeyPress({noteDirection: i, timestamp: ts});
-            if (justReleasedActions[i].check()) onKeyRelease({noteDirection: i, timestamp: ts});
-        }
-        processInputQueue();
-    }
+    playState.playerStrumline.noteVibrations.tryNoteVibration();
+  }
 
-    // Polymod doesn't remember variables for some reason, so we place the variables in the class scope
-    var notesInRange:Array<NoteSprite>;
-    var notesByDirection:Array<Array<NoteSprite>>;
-    var input:PreciseInputEvent;
-    var releaseInput:PreciseInputEvent;
-    var targetNote:Null<NoteSprite>;
-    var notesInDirection:Array<NoteSprite>;
+  // Inputs
+  function initPreciseInputs() {
+    inputPressQueue = [];
+    inputReleaseQueue = [];
+    justPressedActions = [];
+    justReleasedActions = [];
 
-    function processInputQueue() {
-        if (inputPressQueue.length + inputReleaseQueue.length == 0) return;
+    var inputManager:PreciseInputManager = PreciseInputManager.instance;
 
-        // Ignore inputs during cutscenes.
-        if (playState.isInCutscene || playState.disableKeys) {
-            inputPressQueue = [];
-            inputReleaseQueue = [];
-            return;
-        }
+    inputManager.clearKeys();
 
-        notesInRange = playState.playerStrumline.getNotesMayHit();
-        notesByDirection = [for (i in 0...Strumline.KEY_COUNT) []];
-        for (note in notesInRange) notesByDirection[note.direction].push(note);
-
-        // Process press queue
-        while (inputPressQueue.length > 0) {
-            input = inputPressQueue.shift();
-            if (input == null) continue;
-
-            playState.playerStrumline.pressKey(input.noteDirection);
-
-            // Don't credit or penalize inputs in Bot Play.
-            if (playState.isBotPlayMode) continue;
-
-            notesInDirection = notesByDirection[input.noteDirection];
-
-            if (notesInDirection.length == 0) {
-                playState.ghostNoteMiss(input.noteDirection, notesInRange.length > 0);
-                playState.playerStrumline.playPress(input.noteDirection);
-            } else if (notesInDirection.length == 0) {
-                playState.playerStrumline.playPress(input.noteDirection);
-            } else {
-                targetNote = notesInDirection.find((note:NoteSprite) -> !note.lowPriority);
-                if (targetNote == null) targetNote = notesInDirection[0];
-                if (targetNote == null) continue;
-
-                playState.goodNoteHit(targetNote, input);
-                notesInDirection.remove(targetNote);
-                playState.playerStrumline.playConfirm(input.noteDirection);
-            }
-        }
-
-        // Process release queue
-        while (inputReleaseQueue.length > 0) {
-            releaseInput = inputReleaseQueue.shift();
-            if (releaseInput == null) continue;
-
-            playState.playerStrumline.playStatic(releaseInput.noteDirection);
-            playState.playerStrumline.releaseKey(releaseInput.noteDirection);
-        }
-
-        playState.playerStrumline.noteVibrations.tryNoteVibration();
-    }
-
-    // Inputs
-    function initPreciseInputs() {
-        inputPressQueue = [];
-        inputReleaseQueue = [];
-        justPressedActions = [];
-        justReleasedActions = [];
-
-        var inputManager:PreciseInputManager = PreciseInputManager.instance;
-
-        inputManager.clearKeys();
-
-        inputManager.onInputPressed.removeAll();
-        inputManager.onInputReleased.removeAll();
+    inputManager.onInputPressed.removeAll();
+    inputManager.onInputReleased.removeAll();
 /*        inputManager.onInputPressed.add(ev -> onKeyPress(ev));
         inputManager.onInputReleased.add(ev -> onKeyRelease(ev));*/
 
-        initializeKeys(inputManager);
+    initializeKeys(inputManager);
+  }
+
+  function initializeKeys(inputManager:PreciseInputManager) {
+    var keySets = multikeysOptions.controls[Strumline.KEY_COUNT - 1];
+    var i = 0;
+    for (keyList in keySets) {
+      var keyName = "multikey_" + StringTools.toLowerKebabCase(MultikeyHooks.NOTE_DIRECTION_NAMES[Strumline.KEY_COUNT - 1][i]);
+      var pressAction = new FlxActionDigital(keyName + "-press");
+      //var pressAction = new FunkinAction(keyName + "-press");
+      justPressedActions.push(pressAction);
+      var releaseAction = new FlxActionDigital(keyName + "-release");
+      //var releaseAction = new FunkinAction(keyName + "-release");
+      justReleasedActions.push(releaseAction);
+
+      for (bind in keyList) {
+        pressAction.addKey(bind, 2);
+        releaseAction.addKey(bind, -1);
+      }
+
+      i++;
     }
+  }
 
-    function initializeKeys(inputManager:PreciseInputManager) {
-        var keySets = multikeysOptions.controls[Strumline.KEY_COUNT - 1];
-        var i = 0;
-        for (keyList in keySets) {
-            var keyName = "multikey_" + StringTools.toLowerKebabCase(MultikeyHooks.NOTE_DIRECTION_NAMES[Strumline.KEY_COUNT - 1][i]);
-            var pressAction = new FlxActionDigital(keyName + "-press");
-            //var pressAction = new FunkinAction(keyName + "-press");
-            justPressedActions.push(pressAction);
-            var releaseAction = new FlxActionDigital(keyName + "-release");
-            //var releaseAction = new FunkinAction(keyName + "-release");
-            justReleasedActions.push(releaseAction);
+  function onKeyPress(event:PreciseInputEvent) {
+    if (!playState.isGamePaused) inputPressQueue.push(event);
+  }
 
-            for (bind in keyList) {
-                pressAction.addKey(bind, 2);
-                releaseAction.addKey(bind, -1);
-            }
+  function onKeyRelease(event:PreciseInputEvent) {
+    if (!playState.isGamePaused) inputReleaseQueue.push(event);
+  }
 
-            i++;
-        }
-    }
+  function buildMetadataPath(state:PlayState):String {
+    var basePath = "songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata";
+    return state.currentVariation == "default" ? basePath : basePath + "-" + state.currentVariation;
+  }
 
-    function onKeyPress(event:PreciseInputEvent) {
-        if (!playState.isGamePaused) inputPressQueue.push(event);
-    }
+  function readKeyCount(filePath):Null<MultiMeta> {
+    // Not working for now
+/*    trace(filePath);
+    trace(FileUtilSandboxed.fileExists(filePath));
+    trace(FileUtilSandboxed.readJSONFromPath(filePath));
+    //if (!FileUtilSandboxed.pathExists(filePath)) return null;
 
-    function onKeyRelease(event:PreciseInputEvent) {
-        if (!playState.isGamePaused) inputReleaseQueue.push(event);
-    }
+    //trace(FileUtilSandboxed.readJSONFromPath(filePath));
+    //return FileUtilSandboxed.readJSONFromPath(filePath);*/
+    return null;
+  }
 
-    function buildMetadataPath(state:PlayState):String {
-        var basePath = "songs/" + state.currentSong.id + "/" + state.currentSong.id + "-metadata";
-        return state.currentVariation == "default" ? basePath : basePath + "-" + state.currentVariation;
-    }
+  function handleScriptedSongSetup() {
+    var targetSong = PlayState.lastParams?.targetSong;
+    if (!(targetSong is ScriptedSong)) return;
+    var check = targetSong.scriptGet("findFunction");
 
-    function readKeyCount(path):Null<MultiMeta> {
-        for (mods in PolymodHandler.getAllModIds()) {
-            var filePath = "mods/" + mods + "/" + path + ".json";
-            if (FileUtilSandboxed.fileExists(filePath)) return FileUtilSandboxed.readJSONFromPath(filePath);
-        }
-        return null;
-    }
+    if (check("setupMultikey") != null) targetSong.scriptCall("setupMultikey", []);
+  }
 
-    function handleScriptedSongSetup() {
-        var targetSong = PlayState.lastParams?.targetSong;
-        if (!(targetSong is ScriptedSong)) return;
-        var check = targetSong.scriptGet("findFunction");
+  // Cleanup
+  override function onSubStateCloseBegin(event:SubStateScriptEvent) { if (event.targetState is PlayState) cleanup(); }
 
-        if (check("setupMultikey") != null) targetSong.scriptCall("setupMultikey", []);
-    }
+  override function onSongEnd(event:ScriptEvent) { cleanup(); }
 
-    // Cleanup
-    override function onSubStateCloseBegin(event:SubStateScriptEvent) { if (event.targetState is PlayState) cleanup(); }
+  override function onDestroy(event:ScriptEvent) { cleanup(); }
 
-    override function onSongEnd(event:ScriptEvent) { cleanup(); }
-
-    override function onDestroy(event:ScriptEvent) { cleanup(); }
-
-    function cleanup() {
-        playerStrum = null;
-        opponentStrum = null;
-        PreciseInputManager.instance.onInputPressed.removeAll();
-        PreciseInputManager.instance.onInputReleased.removeAll();
-    }
+  function cleanup() {
+    playerStrum = null;
+    opponentStrum = null;
+    PreciseInputManager.instance.onInputPressed.removeAll();
+    PreciseInputManager.instance.onInputReleased.removeAll();
+  }
 }
 
 typedef MultiMeta = {keyCounts:{variation:Map<String, Map<String, Int>>}}
